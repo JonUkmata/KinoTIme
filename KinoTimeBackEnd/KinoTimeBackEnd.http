@@ -1,0 +1,6 @@
+@KinoTimeBackEnd_HostAddress = http://localhost:5296
+
+GET {{KinoTimeBackEnd_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
