@@ -17,7 +17,8 @@ namespace KinoTimeBackEnd.Models
         [Required]
         public int HallId { get; set; }
 
-        [ForeignKey("HallId")]
+        [ForeignKey("HallId")] // Navigation property (Foreign keys dhe  Kufizimet jane vetem te implemtuara direkt ne krijimin e modeleve pra nuk ka nevoj ne CinemaDBContext me specifiku lidhjet dhe kufizimet)
+        
         public required Hall Hall { get; set; }
 
         [Required]
