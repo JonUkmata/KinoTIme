@@ -1,6 +1,11 @@
+using KinoTimeBackEnd.Data; // namespace për CinemaDbContext
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+
+
+// CORS për React
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
@@ -12,9 +17,16 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Swagger / OpenAPI
 builder.Services.AddOpenApi();
 
+// Controllers
 builder.Services.AddControllers();
+
+
+builder.Services.AddDbContext<CinemaDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("CinemaConnection"))
+);
 
 var app = builder.Build();
 
@@ -25,10 +37,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS
 app.UseCors("AllowReactApp");
 
+// Map controllers
 app.MapControllers();
 
+// Example weather forecast (mund ta lëmë ose ta fshijmë më vonë)
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
