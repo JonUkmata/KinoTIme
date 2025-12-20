@@ -16,6 +16,18 @@ namespace KinoTimeBackEnd.Controllers
             _context = context;
         }
 
+
+      private async Task<bool> IsOverlappingAsync(Showtime showtime)
+{
+    return await _context.Showtimes
+        .AnyAsync(s => s.HallId == showtime.HallId &&
+                       s.Id != showtime.Id && // mos e krahaso me veten për PUT
+                       s.StartTime < showtime.EndTime && // shfaqja ekzistuese fillon para fundit të shfaqjes së re
+                       showtime.StartTime < s.EndTime); // shfaqja e re fillon para fundit të shfaqjes ekzistuese
+}
+
+
+
         
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Showtime>>> GetShowtimes() //Kjo eshte nje metod asinkrone qe kthen nje liste te te gjitha shfaqjeve duke perfshire edhe info te filmave dhe sallave. ActionResult eshte nje klase qe kthen rezultatet ose nje Http response si 404 nese nuk gjendet asgje.ToListAsync() eshte nje metode asinkrone qe kthen nje liste nga query qe kemi.Await perdoret per te pritur perfundimin e nje operacioni asinkron pa bllokuar thread-in.
@@ -64,6 +76,11 @@ namespace KinoTimeBackEnd.Controllers
                 return BadRequest("Salla nuk ekziston.");
             }
 
+            if (await IsOverlappingAsync(showtime))
+    {
+        return BadRequest("Ka një shfaqje tjetër në këtë sallë në këtë kohë.");
+    }
+
             _context.Showtimes.Add(showtime);
             await _context.SaveChangesAsync();
 
@@ -84,6 +101,11 @@ namespace KinoTimeBackEnd.Controllers
             {
                 return NotFound();
             }
+
+            if (await IsOverlappingAsync(showtime))
+    {
+        return BadRequest("Ka një shfaqje tjetër në këtë sallë në këtë kohë.");
+    }
 
             existingShowtime.StartTime = showtime.StartTime;
             existingShowtime.MovieId = showtime.MovieId;
