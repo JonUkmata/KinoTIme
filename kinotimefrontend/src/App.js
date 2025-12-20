@@ -1,40 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React from 'react';
 import './App.css';
+import AdminMovies from './admin/pages/AdminMovies.jsx';
+import AdminHalls from './admin/pages/AdminHalls.jsx';
 
-function App() {
-  const [weather, setWeather] = useState([]);
-
-  useEffect(() => {
-    fetch("http://localhost:5296/weatherforecast") // kontrollo portin e backend
-      .then(response => response.json())
-      .then(data => setWeather(data))
-      .catch(err => console.error(err));
-  }, []);
-
+function App() { //Halls dhe Movies i vendosem ketu vetem per demostrim te kardes 12 ne te ardhmen do te kemi nje strukture normale.
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>hello from kinotimefrontend!</p>
+    <div className="container py-4">
+      <h2 className="fw-semibold mb-3">Movies</h2>
+      <AdminMovies />
 
-        <ul>
-          {weather.map((w, index) => (
-            <li key={index}>
-              {w.date} - {w.temperatureC}°C - {w.summary}
-            </li>
-          ))}
-        </ul>
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h2 className="fw-semibold mt-5 mb-3">Halls</h2>
+      <AdminHalls />
     </div>
   );
 }
