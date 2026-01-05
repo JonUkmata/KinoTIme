@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using KinoTimeBackEnd.Services;
 
 namespace KinoTimeBackEnd.Controllers
 {
@@ -13,9 +14,11 @@ namespace KinoTimeBackEnd.Controllers
     public class AuthController : ControllerBase
     {
         private readonly CinemaDbContext _context;
-        public AuthController(CinemaDbContext context)
+        private readonly JwtService _jwtService;
+        public AuthController(CinemaDbContext context, JwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
         }
 
         [HttpPost("register")]
@@ -28,6 +31,7 @@ namespace KinoTimeBackEnd.Controllers
             {
                 Username = dto.Username,
                 PasswordHash = HashPassword(dto.Password),
+                Email = dto.Email,
                 Role = "User"
             };
             _context.Users.Add(user);
@@ -41,7 +45,9 @@ namespace KinoTimeBackEnd.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
             if (user == null || !VerifyPassword(dto.Password, user.PasswordHash))
                 return Unauthorized("Invalid credentials");
-            return Ok("Login successful");
+
+            var token = _jwtService.GenerateToken(user);
+            return Ok(new { token });
         }
 
         private string HashPassword(string password)
@@ -67,9 +73,11 @@ namespace KinoTimeBackEnd.Controllers
         {
             Username = string.Empty;
             Password = string.Empty;
+            Email = string.Empty;
         }
         public string Username { get; set; }
         public string Password { get; set; }
+        public string Email { get; set; }
     }
     public class UserLoginDto
     {
