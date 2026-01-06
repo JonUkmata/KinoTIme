@@ -4,25 +4,19 @@ const playingNowMovies = [
   {
     id: 1,
     title: "Movie 1",
-    posterUrl: "/MoviePage1.jpeg",
+    posterUrl: "/Filmi1.jpg",
     status: "today",
   },
   {
     id: 2,
     title: "Movie 2",
-    posterUrl: "/MoviePage2.jpeg",
+    posterUrl: "/Filmi2.jpg",
     status: "today",
   },
   {
     id: 3,
     title: "Movie 3",
-    posterUrl: "/MoviePage3.jpeg",
-    status: "week",
-  },
-  {
-    id: 4,
-    title: "Movie 4",
-    posterUrl: "/MoviePage4.jpeg",
+    posterUrl: "/Filmi3.jpeg",
     status: "week",
   },
 ];
@@ -73,7 +67,7 @@ export default function PlayingNow() {
             <img
               src={movie.posterUrl}
               alt={movie.title}
-              className="w-full h-72 object-cover"
+              className="w-full h-96 object-cover"
             />
           </div>
         ))}

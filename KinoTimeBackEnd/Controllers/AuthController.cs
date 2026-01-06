@@ -25,7 +25,7 @@ namespace KinoTimeBackEnd.Controllers
         public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
         {
             if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
-                return BadRequest("Username already exists");
+                return BadRequest(new { message = "Username already exists" });
 
             var user = new User
             {
@@ -36,7 +36,7 @@ namespace KinoTimeBackEnd.Controllers
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return Ok("User registered");
+            return Ok(new { message = "User registered" });
         }
 
         [HttpPost("login")]
