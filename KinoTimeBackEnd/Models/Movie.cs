@@ -18,6 +18,9 @@ namespace KinoTimeBackEnd.Models
 
         public string Genre { get; set; } = string.Empty;
 
+        // Duration in minutes
+        public int Duration { get; set; }
+
         public ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
     }
 }

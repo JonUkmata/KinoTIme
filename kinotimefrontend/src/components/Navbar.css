@@ -1,0 +1,110 @@
+/* Navbar.css */
+.navbar {
+  width: 100%;
+  background: #18181b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 70px;
+  height: 70px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: relative;
+  z-index: 10;
+}
+.navbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  margin-left: 18px;
+}
+.logo-icon {
+  background: #e50914;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 1.3rem;
+  padding: 4px 7px;
+  margin-right: 7px;
+}
+.logo-text {
+  font-size: 1.55rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.navbar-links li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.18rem;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+.navbar-links li a:hover {
+  color: #e50914;
+}
+
+.navbar-profile {
+  display: flex;
+  align-items: center;
+  font-size: 1.7rem;
+  color: #fff;
+  cursor: pointer;
+  margin-left: 18px;
+  margin-right: 24px;
+}
+.profile-icon {
+  background: #e50914;
+  border-radius: 50%;
+  padding: 3px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.25rem;
+  width: 34px;
+  height: 34px;
+}
+.profile-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.profile-arrow {
+  color: #fff;
+  font-size: 0.85rem;
+  margin-left: 4px;
+  margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    padding: 0 10px;
+  }
+  .navbar-links {
+    gap: 18px;
+  }
+}
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 0;
+  }
+  .navbar-links {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+}

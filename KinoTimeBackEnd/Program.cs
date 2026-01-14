@@ -1,5 +1,8 @@
 using KinoTimeBackEnd.Data; // namespace për CinemaDbContext
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +32,31 @@ builder.Services.AddDbContext<CinemaDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CinemaConnection"))
 );
 
+builder.Services.AddScoped<KinoTimeBackEnd.Services.JwtService>();
+
+// JWT configuration
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "supersecretkey12345678901234567890";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "KinoTimeIssuer";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "MyAppUsers";
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -42,6 +70,8 @@ app.UseHttpsRedirection();
 
 // CORS
 app.UseCors("AllowReactApp");
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();

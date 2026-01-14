@@ -16,25 +16,25 @@ const moviesData = [
     id: 1,
     title: "Movie 1",
     genre: "Action",
-    posterUrl: "/MoviePage1.jpeg",
+    posterUrl: "/Filmi1.jpg",
   },
   {
     id: 2,
     title: "Movie 2",
     genre: "Horror",
-    posterUrl: "/MoviePage2.jpeg",
+    posterUrl: "/Filmi2.jpg",
   },
   {
     id: 3,
     title: "Movie 3",
     genre: "Comedy",
-    posterUrl: "/MoviePage3.jpeg",
+    posterUrl: "/Filmi3.jpeg",
   },
   {
     id: 4,
     title: "Movie 4",
     genre: "Thriller",
-    posterUrl: "/MoviePage4.jpeg",
+    posterUrl: "/Filmi3.jpeg",
   },
 ];
 
@@ -92,7 +92,7 @@ export default function AllMovies() {
             <img
               src={movie.posterUrl}
               alt={movie.title}
-              className="w-full h-72 object-cover"
+              className="w-full h-96 object-cover"
             />
           </div>
         ))}
