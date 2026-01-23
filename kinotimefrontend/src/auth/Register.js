@@ -47,7 +47,6 @@ const Register = () => {
        
         if (loginRes.token) {
           localStorage.setItem("token", loginRes.token);
-          localStorage.setItem("role", "User");
           navigate("/about");
         } else {
           setError("Regjistrimi u krye, por login dështoi.");
@@ -115,7 +114,7 @@ const Register = () => {
           </button>
         </form>
         <p className="login-register" style={{ marginTop: 18 }}>
-          Keni tashmë një llogari? <a href="/auth/login">Hyni këtu</a>
+          Jeni tashmë një llogari? <a href="/auth/login">Hyni këtu</a>
         </p>
       </div>
     </div>
