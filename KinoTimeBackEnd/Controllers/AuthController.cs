@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using KinoTimeBackEnd.Models;
 using KinoTimeBackEnd.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using KinoTimeBackEnd.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace KinoTimeBackEnd.Controllers
 {
@@ -15,10 +18,12 @@ namespace KinoTimeBackEnd.Controllers
     {
         private readonly CinemaDbContext _context;
         private readonly JwtService _jwtService;
-        public AuthController(CinemaDbContext context, JwtService jwtService)
+        private readonly IConfiguration _config;
+        public AuthController(CinemaDbContext context, JwtService jwtService, IConfiguration config)
         {
             _context = context;
             _jwtService = jwtService;
+            _config = config;
         }
 
         [HttpPost("register")]
@@ -47,7 +52,34 @@ namespace KinoTimeBackEnd.Controllers
                 return Unauthorized("Invalid credentials");
 
             var token = _jwtService.GenerateToken(user);
+            var expireMinutes = int.TryParse(_config["Jwt:ExpireMinutes"], out var min) ? min : 60;
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMinutes),
+                Path = "/"
+            };
+            Response.Cookies.Append("kinotime_auth", token, cookieOptions);
             return Ok(new { token });
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            var userId = User.FindFirst("UserId")?.Value;
+            var username = User.FindFirst("Username")?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            return Ok(new { userId, username, role });
+        }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("kinotime_auth", new CookieOptions { Path = "/" });
+            return Ok(new { message = "Logged out" });
         }
 
         private string HashPassword(string password)

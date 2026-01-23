@@ -6,7 +6,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   // ❌ Jo i loguar
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth/login" replace />;
   }
 
   // ❌ I loguar por s’ka rol të lejuar

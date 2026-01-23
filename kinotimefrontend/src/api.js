@@ -2,11 +2,13 @@
 // This file provides basic functions to interact with the KinoTimeBackEnd API.
 // Update BASE_URL if your backend runs on a different address/port.
 
-const BASE_URL = 'http://localhost:5296'; 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5296'; 
 
 // Helper for GET requests
 export async function apiGet(endpoint) {
-  const response = await fetch(`${BASE_URL}${endpoint}`);
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    credentials: 'include',
+  });
   if (!response.ok) throw new Error('Network response was not ok');
   return response.json();
 }
@@ -17,6 +19,7 @@ export async function apiPost(endpoint, data) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+    credentials: 'include',
   });
   if (!response.ok) throw new Error('Network response was not ok');
   return response.json();
@@ -28,6 +31,7 @@ export async function apiPut(endpoint, data) {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+    credentials: 'include',
   });
   if (!response.ok) throw new Error('Network response was not ok');
   return response.json();
@@ -37,6 +41,7 @@ export async function apiPut(endpoint, data) {
 export async function apiDelete(endpoint) {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'DELETE',
+    credentials: 'include',
   });
   if (!response.ok) throw new Error('Network response was not ok');
   return response.json();

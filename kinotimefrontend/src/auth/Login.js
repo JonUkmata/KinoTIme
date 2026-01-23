@@ -9,6 +9,30 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const decodeJwtPayload = (token) => {
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return null;
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+      return JSON.parse(atob(padded));
+    } catch {
+      return null;
+    }
+  };
+
+  const getRoleFromToken = (token) => {
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+    return (
+      payload.role ||
+      payload.Role ||
+      payload.roles?.[0] ||
+      payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+      null
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Login attempted');
@@ -21,7 +45,17 @@ const Login = () => {
         console.log('API response:', res);
         if (res.token) {
           localStorage.setItem('token', res.token);
-          navigate('/about'); // redirect te faqja AboutUs pas login
+          const roleFromToken = getRoleFromToken(res.token);
+          if (roleFromToken) {
+            localStorage.setItem('role', roleFromToken);
+          } else {
+            localStorage.removeItem('role');
+          }
+          if (roleFromToken && roleFromToken.toLowerCase() === 'admin') {
+            navigate('/admin');
+            return;
+          }
+          navigate('/about');
         } else {
           setError('Login failed.');
         }

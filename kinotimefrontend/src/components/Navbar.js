@@ -1,13 +1,20 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiPost } from '../api';
 import './Navbar.css';
 
 const Navbar = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiPost('/api/Auth/logout');
+    } catch (err) {
+      console.log('Logout error:', err);
+    }
     localStorage.removeItem('token');
-    navigate('/login');
+    localStorage.removeItem('role');
+    navigate('/auth/login');
   };
 
   return (

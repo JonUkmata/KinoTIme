@@ -14,7 +14,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000")
+            policy.WithOrigins(
+                    "http://localhost:3000", // CRA user app
+                    "http://localhost:3001", // optional CRA admin app
+                    "http://localhost:5173"  // Vite (TailAdmin default)
+                )
+                  .AllowCredentials()
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
@@ -54,6 +59,17 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (context.Request.Cookies.TryGetValue("kinotime_auth", out var token))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 

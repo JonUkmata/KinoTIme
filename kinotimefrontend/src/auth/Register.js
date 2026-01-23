@@ -47,6 +47,7 @@ const Register = () => {
        
         if (loginRes.token) {
           localStorage.setItem("token", loginRes.token);
+          localStorage.setItem("role", "User");
           navigate("/about");
         } else {
           setError("Regjistrimi u krye, por login dështoi.");
