@@ -70,6 +70,7 @@ namespace KinoTimeBackEnd.Controllers
             existingMovie.Genre = movie.Genre;
             existingMovie.Description = movie.Description;
             existingMovie.ReleaseYear = movie.ReleaseYear;
+            existingMovie.Duration = movie.Duration;
 
             await _context.SaveChangesAsync();
             return NoContent();
