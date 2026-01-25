@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 using KinoTimeBackEnd.Data;
 using KinoTimeBackEnd.Models;
 
@@ -56,19 +57,37 @@ namespace KinoTimeBackEnd.Controllers
         // ===================== CREATE (ADMIN ONLY) =====================
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<ActionResult<Showtime>> CreateShowtime(Showtime showtime)
+        public async Task<ActionResult<Showtime>> CreateShowtime(ShowtimeCreateDto dto)
         {
-            if (showtime.MovieId <= 0 || showtime.HallId <= 0)
-                return BadRequest("MovieId dhe HallId janë të detyrueshme.");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            if (!await _context.Movies.AnyAsync(m => m.Id == showtime.MovieId))
+            if (dto.MovieId <= 0 || dto.HallId <= 0)
+                return BadRequest("MovieId dhe HallId jane te detyrueshme.");
+
+            if (dto.EndTime <= dto.StartTime)
+                return BadRequest("EndTime duhet te jete me i madh se StartTime.");
+
+            var movie = await _context.Movies.FindAsync(dto.MovieId);
+            if (movie == null)
                 return BadRequest("Filmi nuk ekziston.");
 
-            if (!await _context.Halls.AnyAsync(h => h.Id == showtime.HallId))
+            var hall = await _context.Halls.FindAsync(dto.HallId);
+            if (hall == null)
                 return BadRequest("Salla nuk ekziston.");
 
+            var showtime = new Showtime
+            {
+                MovieId = dto.MovieId,
+                HallId = dto.HallId,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Movie = movie,
+                Hall = hall
+            };
+
             if (await IsOverlappingAsync(showtime))
-                return BadRequest("Ka një shfaqje tjetër në këtë sallë në këtë kohë.");
+                return BadRequest("Ka nje shfaqje tjeter ne kete salle ne kete kohe.");
 
             _context.Showtimes.Add(showtime);
             await _context.SaveChangesAsync();
@@ -79,21 +98,52 @@ namespace KinoTimeBackEnd.Controllers
         // ===================== UPDATE (ADMIN ONLY) =====================
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateShowtime(int id, Showtime showtime)
+        public async Task<IActionResult> UpdateShowtime(int id, ShowtimeUpdateDto dto)
         {
-            if (id != showtime.Id)
-                return BadRequest("ID nuk përputhet.");
+            if (id != dto.Id)
+                return BadRequest("ID nuk perputhet.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (dto.MovieId <= 0 || dto.HallId <= 0)
+                return BadRequest("MovieId dhe HallId jane te detyrueshme.");
+
+            if (dto.EndTime <= dto.StartTime)
+                return BadRequest("EndTime duhet te jete me i madh se StartTime.");
 
             var existingShowtime = await _context.Showtimes.FindAsync(id);
             if (existingShowtime == null)
                 return NotFound();
 
-            if (await IsOverlappingAsync(showtime))
-                return BadRequest("Ka një shfaqje tjetër në këtë sallë në këtë kohë.");
+            var movie = await _context.Movies.FindAsync(dto.MovieId);
+            if (movie == null)
+                return BadRequest("Filmi nuk ekziston.");
 
-            existingShowtime.StartTime = showtime.StartTime;
-            existingShowtime.MovieId = showtime.MovieId;
-            existingShowtime.HallId = showtime.HallId;
+            var hall = await _context.Halls.FindAsync(dto.HallId);
+            if (hall == null)
+                return BadRequest("Salla nuk ekziston.");
+
+            var overlapCheck = new Showtime
+            {
+                Id = id,
+                MovieId = dto.MovieId,
+                HallId = dto.HallId,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Movie = movie,
+                Hall = hall
+            };
+
+            if (await IsOverlappingAsync(overlapCheck))
+                return BadRequest("Ka nje shfaqje tjeter ne kete salle ne kete kohe.");
+
+            existingShowtime.StartTime = dto.StartTime;
+            existingShowtime.EndTime = dto.EndTime;
+            existingShowtime.MovieId = dto.MovieId;
+            existingShowtime.HallId = dto.HallId;
+            existingShowtime.Movie = movie;
+            existingShowtime.Hall = hall;
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -113,6 +163,39 @@ namespace KinoTimeBackEnd.Controllers
 
             return NoContent();
         }
+    }
+
+    public class ShowtimeCreateDto
+    {
+        [Required]
+        public int MovieId { get; set; }
+
+        [Required]
+        public int HallId { get; set; }
+
+        [Required]
+        public DateTime StartTime { get; set; }
+
+        [Required]
+        public DateTime EndTime { get; set; }
+    }
+
+    public class ShowtimeUpdateDto
+    {
+        [Required]
+        public int Id { get; set; }
+
+        [Required]
+        public int MovieId { get; set; }
+
+        [Required]
+        public int HallId { get; set; }
+
+        [Required]
+        public DateTime StartTime { get; set; }
+
+        [Required]
+        public DateTime EndTime { get; set; }
     }
 }
 

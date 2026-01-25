@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 
 namespace KinoTimeBackEnd.Models
@@ -21,6 +22,7 @@ namespace KinoTimeBackEnd.Models
         // Duration in minutes
         public int Duration { get; set; }
 
+        [JsonIgnore]
         public ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();
     }
 }
