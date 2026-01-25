@@ -1,5 +1,4 @@
 import React from "react";
-import "../admin.css";
 
 export default function AdminMovies() {
   // Te dhena statike te perkohshme (do te zëvendësohen me te dhena nga API)
@@ -11,37 +10,46 @@ export default function AdminMovies() {
   ];
 
   return (
-    <div className="card card-soft">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4 className="mb-0">Movies Management</h4>
-          <button className="btn btn-primary btn-lg"><i className="bi bi-plus-lg me-2"></i>Add Movie</button>
+    <div className="rounded-xl border border-gray-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] dark:border-white/[0.05] dark:bg-white/[0.03]">
+      <div className="p-4 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white/90">Movies Management</h4>
+          <button className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+            <i className="bi bi-plus-lg mr-2" aria-hidden="true"></i>
+            Add Movie
+          </button>
         </div>
-        <div className="table-responsive">
-          <table className="table align-middle">
-            <thead>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500 dark:border-white/[0.05] dark:text-gray-400">
               <tr>
-                <th>Poster</th>
-                <th>Title</th>
-                <th>Genre</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th className="px-4 py-3 font-medium">Poster</th>
+                <th className="px-4 py-3 font-medium">Title</th>
+                <th className="px-4 py-3 font-medium">Genre</th>
+                <th className="px-4 py-3 font-medium">Duration</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {movies.map((m, idx) => (
-                <tr key={idx}>
-                  <td><img src={m.poster} alt="poster" className="rounded" width="48" height="48" /></td>
-                  <td className="fw-medium">{m.title}</td>
-                  <td className="text-muted">{m.genre}</td>
-                  <td className="text-muted">{m.duration}</td>
-                  <td>
-                    <span className="badge badge-soft-success rounded-pill">{m.status}</span>
+                <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
+                  <td className="px-4 py-3">
+                    <img src={m.poster} alt="poster" className="h-12 w-12 rounded object-cover" width="48" height="48" />
                   </td>
-                  <td className="text-nowrap">
-                    <button className="btn btn-link text-primary p-0 me-3"><i className="bi bi-pencil-square"></i></button>
-                    <button className="btn btn-link text-danger p-0"><i className="bi bi-trash"></i></button>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white/90">{m.title}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{m.genre}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{m.duration}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center rounded-full border border-[#cbead4] bg-[#eaf7ee] px-3 py-1 text-xs font-semibold text-[#198754]">{m.status}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <button className="inline-flex items-center text-blue-600 transition-colors hover:text-blue-700" aria-label="Edit movie">
+                      <i className="bi bi-pencil-square"></i>
+                    </button>
+                    <button className="ml-3 inline-flex items-center text-red-600 transition-colors hover:text-red-700" aria-label="Delete movie">
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </td>
                 </tr>
               ))}

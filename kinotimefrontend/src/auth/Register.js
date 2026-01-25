@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../api";
-import "./Login.css";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -67,23 +66,23 @@ const Register = () => {
   };
 
   return (
-    <div className="login-container">
+    <div className="flex min-h-screen bg-[#111] max-[700px]:flex-col">
       <div
-        className="login-left"
+        className="flex-1 bg-[#111] opacity-70 max-[700px]:hidden"
         style={{
           background: "url('/Clogin.jpg') no-repeat center center/cover, #111",
-          opacity: 0.7,
         }}
       />
-      <div className="login-right">
-        <h1 style={{ fontWeight: 600, fontSize: 32, marginBottom: 8 }}>Mirë se vini në KinoTime</h1>
-        <p style={{ color: '#555', marginBottom: 24 }}>
+      <div className="flex flex-1 flex-col items-start justify-center bg-[#18181b] px-[120px] text-white max-[900px]:px-8 max-[700px]:min-h-screen max-[700px]:w-full max-[700px]:items-center max-[700px]:px-3">
+        <h1 className="mb-2 text-[32px] font-semibold">Mirë se vini në KinoTime</h1>
+        <p className="mb-6 text-[#555]">
           Bashkohuni për një përvojë të paharrueshme
         </p>
-        {error && <div style={{color:'#ff1a1a', marginBottom:12}}>{error}</div>}
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label>Username</label>
+        {error && <div className="mb-3 text-[#ff1a1a]">{error}</div>}
+        <form className="flex w-full flex-col" onSubmit={handleSubmit}>
+          <label className="mb-[6px] text-base font-medium">Username</label>
           <input
+            className="mb-[18px] rounded-lg bg-[#232323] px-4 py-3 text-base text-white outline-none focus:ring-2 focus:ring-[#e50914]"
             type="text"
             name="username"
             placeholder="Zgjidhni një username"
@@ -91,8 +90,9 @@ const Register = () => {
             onChange={handleChange}
             required
           />
-          <label>Email</label>
+          <label className="mb-[6px] text-base font-medium">Email</label>
           <input
+            className="mb-[18px] rounded-lg bg-[#232323] px-4 py-3 text-base text-white outline-none focus:ring-2 focus:ring-[#e50914]"
             type="email"
             name="email"
             placeholder="email@shembull.com"
@@ -100,8 +100,9 @@ const Register = () => {
             onChange={handleChange}
             required
           />
-          <label>Fjalëkalimi</label>
+          <label className="mb-[6px] text-base font-medium">Fjalëkalimi</label>
           <input
+            className="mb-[18px] rounded-lg bg-[#232323] px-4 py-3 text-base text-white outline-none focus:ring-2 focus:ring-[#e50914]"
             type="password"
             name="password"
             placeholder="Krijoni një fjalëkalim të fortë"
@@ -109,12 +110,15 @@ const Register = () => {
             onChange={handleChange}
             required
           />
-          <button type="submit" className="login-btn" style={{ marginTop: 16 }}>
+          <button
+            type="submit"
+            className="mb-[18px] mt-4 rounded-lg bg-[#ff1a1a] py-3.5 text-[1.1rem] font-semibold text-white transition-colors hover:bg-[#c40000]"
+          >
             Krijo Llogarinë
           </button>
         </form>
-        <p className="login-register" style={{ marginTop: 18 }}>
-          Jeni tashmë një llogari? <a href="/auth/login">Hyni këtu</a>
+        <p className="mt-[18px] text-base text-[#b3b3b3]">
+          Jeni tashmë një llogari? <a className="ml-1 font-medium text-[#e50914] hover:underline" href="/auth/login">Hyni këtu</a>
         </p>
       </div>
     </div>

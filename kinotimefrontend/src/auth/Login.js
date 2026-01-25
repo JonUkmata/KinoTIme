@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import "./Login.css";
 import { apiPost } from "../api";
 
 const Login = () => {
@@ -78,33 +77,29 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      {error && (
-        <div style={{ color: "#ff1a1a", marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-
+    <div className="flex min-h-screen bg-[#111] max-[700px]:flex-col">
       <div
-        className="login-left"
+        className="flex-1 bg-[#111] opacity-70 max-[700px]:hidden"
         style={{
           background: "url('/Clogin.jpg') no-repeat center center/cover, #111",
-          opacity: 0.7,
         }}
       />
 
-      <div className="login-right">
-        <div className="login-logo">
-          <span className="logo-icon">🎬</span>
-          <span className="logo-text">KinoTime</span>
+      <div className="flex flex-1 flex-col items-start justify-center bg-[#18181b] px-[120px] text-white max-[900px]:px-8 max-[700px]:min-h-screen max-[700px]:w-full max-[700px]:items-center max-[700px]:px-3">
+        <div className="mb-8 flex items-center">
+          <span className="mr-3 rounded-[12px] bg-[#e50914] px-3 py-2 text-[2.2rem] text-white">🎬</span>
+          <span className="text-[2rem] font-bold tracking-[1px]">KinoTime</span>
         </div>
 
-        <h1>Welcome Back</h1>
-        <p className="login-subtitle">Sign in to continue your cinema experience</p>
+        <h1 className="mb-2 text-[2.5rem] font-semibold">Welcome Back</h1>
+        <p className="mb-8 text-[#b3b3b3]">Sign in to continue your cinema experience</p>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label>Username</label>
+        {error && <div className="mb-3 text-[#ff1a1a]">{error}</div>}
+
+        <form className="flex w-full flex-col" onSubmit={handleSubmit}>
+          <label className="mb-[6px] text-base font-medium">Username</label>
           <input
+            className="mb-[18px] rounded-lg bg-[#232323] px-4 py-3 text-base text-white outline-none focus:ring-2 focus:ring-[#e50914]"
             type="text"
             placeholder="your username"
             value={username}
@@ -113,8 +108,9 @@ const Login = () => {
             autoComplete="username"
           />
 
-          <label>Password</label>
+          <label className="mb-[6px] text-base font-medium">Password</label>
           <input
+            className="mb-[18px] rounded-lg bg-[#232323] px-4 py-3 text-base text-white outline-none focus:ring-2 focus:ring-[#e50914]"
             type="password"
             placeholder="********"
             value={password}
@@ -123,13 +119,18 @@ const Login = () => {
             autoComplete="current-password"
           />
 
-          <button type="submit" className="login-btn" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="mb-[18px] mt-2 rounded-lg bg-[#ff1a1a] py-3.5 text-[1.1rem] font-semibold text-white transition-colors hover:bg-[#c40000] disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="login-register">
-          Don't have an account? <Link to="/auth/register">Create Account</Link>
+        <p className="text-base text-[#b3b3b3]">
+          Don't have an account?
+          <Link className="ml-1 font-medium text-[#e50914] hover:underline" to="/auth/register">Create Account</Link>
         </p>
       </div>
     </div>

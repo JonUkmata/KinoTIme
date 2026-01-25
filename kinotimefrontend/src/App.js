@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './App.css';
 import AdminMovies from './admin/pages/AdminMovies.jsx';
 import AdminHalls from './admin/pages/AdminHalls.jsx';
 import AdminDashboard from './admin/pages/AdminDashboard.jsx';
@@ -25,21 +24,10 @@ const decodeJwtPayload = (token) => {
   }
 };
 
-const getRoleFromToken = (token) => {
-  const payload = decodeJwtPayload(token);
-  if (!payload) return null;
-  return (
-    payload.role ||
-    payload.Role ||
-    payload.roles?.[0] ||
-    payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-    null
-  );
-};
-
 const isTokenValid = (token) => {
   const payload = decodeJwtPayload(token);
-  if (!payload || !payload.exp) return true;
+  if (!payload) return false;
+  if (!payload.exp) return true;
   return Date.now() < payload.exp * 1000;
 };
 
@@ -47,7 +35,7 @@ function App() {
     // Home page komponenti
     function Home() {
       return (
-        <div style={{padding:'60px 0', textAlign:'center', color:'#fff'}}>
+        <div className="py-[60px] text-center text-white">
           <h1>Welcome to KinoTime!</h1>
           <p>This is your main dashboard.</p>
         </div>
@@ -72,7 +60,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Protected layout për të gjitha faqet pas login
+  
   // Protected layout për të gjitha faqet pas login
   const ProtectedLayout = ({ children }) => {
     const token = localStorage.getItem('token');
@@ -91,16 +79,11 @@ function App() {
 
   const AdminLayout = () => {
     const token = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role');
+    const role = localStorage.getItem('role');
     if (!token || !isTokenValid(token)) {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       return <Navigate to="/auth/login" replace />;
-    }
-    const roleFromToken = getRoleFromToken(token);
-    const role = roleFromToken || storedRole;
-    if (roleFromToken && storedRole !== roleFromToken) {
-      localStorage.setItem('role', roleFromToken);
     }
     if (!role || role.toLowerCase() !== 'admin') return <Navigate to="/about" replace />;
     return <AppLayout />;
@@ -112,7 +95,7 @@ function App() {
         {/* Default: çdo path pa token shkon te login */}
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/register" element={<Register />} />
-        <Route path="/" element={<Navigate to="/auth/login" replace />} />
+        <Route path="/" element={<ProtectedLayout><Home /></ProtectedLayout>} />
         <Route path="/playing" element={<ProtectedLayout><PlayingNow /></ProtectedLayout>} />
         <Route path="/about" element={<ProtectedLayout><AboutUs /></ProtectedLayout>} />
         <Route path="/coming-soon" element={<ProtectedLayout><ComingSoon /></ProtectedLayout>} />
