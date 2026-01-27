@@ -110,6 +110,71 @@ namespace KinoTimeBackEnd.Controllers
             return Ok(new { userId, username, role });
         }
 
+        [Authorize]
+        [HttpGet("sessions")]
+        public async Task<IActionResult> Sessions()
+        {
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var currentRefresh = Request.Cookies.TryGetValue("kinotime_refresh", out var cookieToken)
+                ? cookieToken
+                : null;
+
+            var tokens = await _context.RefreshTokens
+                .Where(rt => rt.UserId == userId)
+                .ToListAsync();
+
+            var sessions = tokens.Select(rt => new
+            {
+                rt.Id,
+                rt.ExpirationDate,
+                IsCurrent = currentRefresh != null && rt.Token == currentRefresh
+            });
+
+            return Ok(sessions);
+        }
+
+        [Authorize]
+        [HttpPost("revoke/{id}")]
+        public async Task<IActionResult> Revoke(int id)
+        {
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var token = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Id == id && rt.UserId == userId);
+
+            if (token == null)
+                return NotFound();
+
+            _context.RefreshTokens.Remove(token);
+            await _context.SaveChangesAsync();
+
+            if (Request.Cookies.TryGetValue("kinotime_refresh", out var current) && current == token.Token)
+            {
+                ClearAuthCookies();
+            }
+
+            return Ok(new { message = "Session revoked" });
+        }
+
+        [Authorize]
+        [HttpPost("revoke-all")]
+        public async Task<IActionResult> RevokeAll()
+        {
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var tokens = _context.RefreshTokens.Where(rt => rt.UserId == userId);
+            _context.RefreshTokens.RemoveRange(tokens);
+            await _context.SaveChangesAsync();
+
+            ClearAuthCookies();
+
+            return Ok(new { message = "All sessions revoked" });
+        }
+
         [HttpPost("logout")]
         public IActionResult Logout()
         {
