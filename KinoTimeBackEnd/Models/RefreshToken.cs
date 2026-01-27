@@ -6,6 +6,12 @@ namespace KinoTimeBackEnd.Models
 {
     public class RefreshToken
     {
+        public RefreshToken()
+        {
+            Token = string.Empty;
+            User = null!;
+        }
+
         [Key]
         public int Id { get; set; }
 

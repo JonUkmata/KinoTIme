@@ -67,7 +67,37 @@ namespace KinoTimeBackEnd.Controllers
                 Path = "/"
             };
             Response.Cookies.Append("kinotime_auth", token, cookieOptions);
+            await RotateRefreshTokenAsync(user.Id);
             return Ok(new { token });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            if (!Request.Cookies.TryGetValue("kinotime_refresh", out var refreshToken))
+                return Unauthorized("Missing refresh token");
+
+            var storedToken = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+            if (storedToken == null || storedToken.ExpirationDate <= DateTime.UtcNow)
+            {
+                if (storedToken != null)
+                {
+                    _context.RefreshTokens.Remove(storedToken);
+                    await _context.SaveChangesAsync();
+                }
+                ClearAuthCookies();
+                return Unauthorized("Invalid refresh token");
+            }
+
+            var user = storedToken.User;
+            var accessToken = _jwtService.GenerateToken(user);
+            SetAccessCookie(accessToken);
+            await RotateRefreshTokenAsync(user.Id, storedToken);
+
+            return Ok(new { token = accessToken });
         }
 
         [Authorize]
@@ -83,7 +113,17 @@ namespace KinoTimeBackEnd.Controllers
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("kinotime_auth", new CookieOptions { Path = "/" });
+            if (Request.Cookies.TryGetValue("kinotime_refresh", out var refreshToken))
+            {
+                var storedToken = _context.RefreshTokens.FirstOrDefault(rt => rt.Token == refreshToken);
+                if (storedToken != null)
+                {
+                    _context.RefreshTokens.Remove(storedToken);
+                    _context.SaveChanges();
+                }
+            }
+
+            ClearAuthCookies();
             return Ok(new { message = "Logged out" });
         }
 
@@ -101,6 +141,81 @@ namespace KinoTimeBackEnd.Controllers
         {
             var hashOfInput = HashPassword(password);
             return hashOfInput == storedHash;
+        }
+
+        private int GetRefreshDays()
+        {
+            return int.TryParse(_config["Jwt:RefreshDays"], out var days) ? days : 7;
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(64);
+            return Convert.ToBase64String(bytes);
+        }
+
+        private void SetAccessCookie(string token)
+        {
+            var expireMinutes = int.TryParse(_config["Jwt:ExpireMinutes"], out var min) ? min : 60;
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(expireMinutes),
+                Path = "/"
+            };
+            Response.Cookies.Append("kinotime_auth", token, cookieOptions);
+        }
+
+        private void SetRefreshCookie(string refreshToken)
+        {
+            var refreshDays = GetRefreshDays();
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(refreshDays),
+                Path = "/"
+            };
+            Response.Cookies.Append("kinotime_refresh", refreshToken, cookieOptions);
+        }
+
+        private void ClearAuthCookies()
+        {
+            Response.Cookies.Delete("kinotime_auth", new CookieOptions { Path = "/" });
+            Response.Cookies.Delete("kinotime_refresh", new CookieOptions { Path = "/" });
+        }
+
+        private async Task RotateRefreshTokenAsync(int userId, RefreshToken existingToken = null)
+        {
+            var refreshDays = GetRefreshDays();
+            var newTokenValue = GenerateRefreshToken();
+            var newExpiry = DateTime.UtcNow.AddDays(refreshDays);
+
+            if (existingToken != null)
+            {
+                existingToken.Token = newTokenValue;
+                existingToken.ExpirationDate = newExpiry;
+                _context.RefreshTokens.Update(existingToken);
+            }
+            else
+            {
+                var tokens = _context.RefreshTokens.Where(rt => rt.UserId == userId);
+                _context.RefreshTokens.RemoveRange(tokens);
+                await _context.SaveChangesAsync();
+
+                _context.RefreshTokens.Add(new RefreshToken
+                {
+                    UserId = userId,
+                    Token = newTokenValue,
+                    ExpirationDate = newExpiry
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            SetRefreshCookie(newTokenValue);
         }
     }
 
