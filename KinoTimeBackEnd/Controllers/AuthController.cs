@@ -47,7 +47,12 @@ namespace KinoTimeBackEnd.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
+            var identifier = (dto.Username ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(identifier))
+                return Unauthorized("Invalid credentials");
+
+            var user = await _context.Users.FirstOrDefaultAsync(
+                u => u.Username == identifier || u.Email == identifier);
             if (user == null || !VerifyPassword(dto.Password, user.PasswordHash))
                 return Unauthorized("Invalid credentials");
 
