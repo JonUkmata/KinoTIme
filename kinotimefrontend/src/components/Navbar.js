@@ -11,15 +11,15 @@ const Navbar = () => {
     } catch (err) {
       console.log('Logout error:', err);
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
     navigate('/auth/login');
   };
 
   return (
     <nav className="relative z-10 flex h-[70px] w-full items-center justify-between bg-[#18181b] px-[70px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] max-[900px]:px-[10px] max-[600px]:h-auto max-[600px]:flex-col max-[600px]:py-[10px]">
       <div className="ml-[18px] flex items-center max-[600px]:ml-0">
-        <span className="mr-[7px] rounded-[12px] bg-[#e50914] px-[7px] py-[4px] text-[1.3rem] text-white">🎬</span>
+        <span className="mr-[7px] rounded-[12px] bg-[#e50914] px-[7px] py-[4px] text-[1.3rem] text-white">
+          {"\u{1F3AC}"}
+        </span>
         <span className="text-[1.55rem] font-normal tracking-[1px] text-white">KinoTime</span>
       </div>
       <div className="flex flex-1 justify-center">

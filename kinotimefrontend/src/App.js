@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AdminMovies from './admin/pages/AdminMovies.jsx';
 import AdminHalls from './admin/pages/AdminHalls.jsx';
@@ -25,24 +25,6 @@ function App() {
     );
   }
 
-  const [token, setToken] = useState(localStorage.getItem('token'));
-
-  useEffect(() => {
-    const handleStorage = () => {
-      setToken(localStorage.getItem('token'));
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  // Update token when login/logout happens in the same tab
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setToken(localStorage.getItem('token'));
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
   const UserLayout = () => (
     <>
       <Navbar />
@@ -50,10 +32,8 @@ function App() {
     </>
   );
 
-  const routerKey = token || 'guest';
-
   return (
-    <Router key={routerKey}>
+    <Router>
       <Routes>
         {/* Default: landing goes to login */}
         <Route path="/" element={<Navigate to="/auth/login" replace />} />
