@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AdminMovies from './admin/pages/AdminMovies.jsx';
 import AdminHalls from './admin/pages/AdminHalls.jsx';
+import AdminShowtimes from './admin/pages/AdminShowtimes.jsx';
 import AdminDashboard from './admin/pages/AdminDashboard.jsx';
 import AppLayout from './admin/layout/AppLayout.jsx';
 import Login from './auth/Login';
@@ -55,6 +56,7 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="movies" element={<AdminMovies />} />
               <Route path="halls" element={<AdminHalls />} />
+              <Route path="showtimes" element={<AdminShowtimes />} />
             </Route>
           </Route>
         </Route>

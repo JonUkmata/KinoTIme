@@ -28,6 +28,11 @@ const navItems = [
     name: "Halls",
     path: "/admin/halls",
   },
+  {
+    icon: <TableIcon />,
+    name: "Showtimes",
+    path: "/admin/showtimes",
+  },
 ];
 
 const othersItems = [];

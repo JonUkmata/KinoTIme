@@ -19,6 +19,8 @@ namespace KinoTimeBackEnd.Models
 
         public string Genre { get; set; } = string.Empty;
 
+        public string PosterUrl { get; set; } = string.Empty;
+
         // Duration in minutes
         public int Duration { get; set; }
 

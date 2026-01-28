@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut } from "../../services/api";
 
-export default function AdminMovies() {
+export default function AdminShowtimes() {
   const emptyForm = {
-    title: "",
-    genre: "",
-    description: "",
-    releaseYear: "",
-    duration: "",
-    posterUrl: "",
+    movieId: "",
+    hallId: "",
+    startTime: "",
+    endTime: "",
   };
 
+  const [showtimes, setShowtimes] = useState([]);
   const [movies, setMovies] = useState([]);
+  const [halls, setHalls] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,14 +20,24 @@ export default function AdminMovies() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const normalizeMovie = (movie) => ({
-    id: movie?.id ?? movie?.Id,
-    title: movie?.title ?? movie?.Title ?? "",
-    genre: movie?.genre ?? movie?.Genre ?? "",
-    description: movie?.description ?? movie?.Description ?? "",
-    releaseYear: movie?.releaseYear ?? movie?.ReleaseYear ?? "",
-    duration: movie?.duration ?? movie?.Duration ?? "",
-    posterUrl: movie?.posterUrl ?? movie?.PosterUrl ?? movie?.poster ?? "",
+  const normalizeShowtime = (showtime) => ({
+    id: showtime?.id ?? showtime?.Id,
+    movieId:
+      showtime?.movieId ??
+      showtime?.MovieId ??
+      showtime?.movie?.id ??
+      showtime?.Movie?.Id ??
+      0,
+    hallId:
+      showtime?.hallId ??
+      showtime?.HallId ??
+      showtime?.hall?.id ??
+      showtime?.Hall?.Id ??
+      0,
+    startTime: showtime?.startTime ?? showtime?.StartTime ?? "",
+    endTime: showtime?.endTime ?? showtime?.EndTime ?? "",
+    movieTitle: showtime?.movie?.title ?? showtime?.Movie?.Title ?? "",
+    hallName: showtime?.hall?.name ?? showtime?.Hall?.Name ?? "",
   });
 
   const toNumber = (value) => {
@@ -36,28 +46,52 @@ export default function AdminMovies() {
     return Number.isNaN(parsed) ? 0 : parsed;
   };
 
-  const toStringValue = (value) => {
-    if (value === null || value === undefined || value === 0) return "";
-    return String(value);
+  const toInputDateTime = (value) => {
+    if (!value) return "";
+    if (typeof value === "string" && value.includes("T")) {
+      return value.slice(0, 16);
+    }
+    return value;
   };
 
-  const loadMovies = async () => {
+  const formatDateTime = (value) => {
+    if (!value) return "--";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+  };
+
+  const loadShowtimes = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await apiGet("/api/Movies");
-      setMovies(Array.isArray(data) ? data : []);
+      const data = await apiGet("/api/Showtimes");
+      setShowtimes(Array.isArray(data) ? data : []);
       return true;
     } catch (err) {
-      setError(err?.message || "Failed to load movies.");
+      setError(err?.message || "Failed to load showtimes.");
       return false;
     } finally {
       setLoading(false);
     }
   };
 
+  const loadLookups = async () => {
+    try {
+      const [moviesData, hallsData] = await Promise.all([
+        apiGet("/api/Movies"),
+        apiGet("/api/Halls"),
+      ]);
+      setMovies(Array.isArray(moviesData) ? moviesData : []);
+      setHalls(Array.isArray(hallsData) ? hallsData : []);
+    } catch (err) {
+      setError(err?.message || "Failed to load movies or halls.");
+    }
+  };
+
   useEffect(() => {
-    loadMovies();
+    loadShowtimes();
+    loadLookups();
   }, []);
 
   const handleChange = (event) => {
@@ -73,22 +107,20 @@ export default function AdminMovies() {
     setError("");
   };
 
-  const handleEdit = (movie) => {
-    const normalized = normalizeMovie(movie);
+  const handleEdit = (showtime) => {
+    const normalized = normalizeShowtime(showtime);
     if (!normalized.id) {
-      setError("Missing movie id. Refresh and try again.");
+      setError("Missing showtime id. Refresh and try again.");
       return;
     }
     setIsFormOpen(true);
     setIsEditing(true);
     setEditingId(normalized.id);
     setFormData({
-      title: normalized.title,
-      genre: normalized.genre,
-      description: normalized.description,
-      releaseYear: toStringValue(normalized.releaseYear),
-      duration: toStringValue(normalized.duration),
-      posterUrl: normalized.posterUrl || "",
+      movieId: String(normalized.movieId || ""),
+      hallId: String(normalized.hallId || ""),
+      startTime: toInputDateTime(normalized.startTime),
+      endTime: toInputDateTime(normalized.endTime),
     });
     setError("");
   };
@@ -104,73 +136,125 @@ export default function AdminMovies() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
     const payload = {
-      title: formData.title.trim(),
-      genre: formData.genre.trim(),
-      description: formData.description.trim(),
-      releaseYear: toNumber(formData.releaseYear),
-      duration: toNumber(formData.duration),
-      posterUrl: formData.posterUrl.trim(),
+      movieId: toNumber(formData.movieId),
+      hallId: toNumber(formData.hallId),
+      startTime: formData.startTime,
+      endTime: formData.endTime,
     };
 
-    if (!payload.title) {
-      setError("Title is required.");
+    if (!payload.movieId || !payload.hallId) {
+      setError("Movie and hall are required.");
+      return;
+    }
+
+    if (!payload.startTime || !payload.endTime) {
+      setError("Start time and end time are required.");
+      return;
+    }
+
+    const start = new Date(payload.startTime);
+    const end = new Date(payload.endTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      setError("Invalid start or end time.");
+      return;
+    }
+
+    if (end <= start) {
+      setError("End time must be after start time.");
       return;
     }
 
     setSaving(true);
     try {
       if (isEditing && editingId !== null) {
-        await apiPut(`/api/Movies/${editingId}`, {
+        await apiPut(`/api/Showtimes/${editingId}`, {
           id: editingId,
           ...payload,
         });
       } else {
-        await apiPost("/api/Movies", payload);
+        await apiPost("/api/Showtimes", payload);
       }
-      const refreshed = await loadMovies();
+      const refreshed = await loadShowtimes();
       if (refreshed) {
         handleCancel();
       }
     } catch (err) {
-      setError(err?.message || "Failed to save movie.");
+      setError(err?.message || "Failed to save showtime.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (movie) => {
-    const normalized = normalizeMovie(movie);
+  const handleDelete = async (showtime) => {
+    const normalized = normalizeShowtime(showtime);
     if (!normalized.id) {
-      setError("Missing movie id. Refresh and try again.");
+      setError("Missing showtime id. Refresh and try again.");
       return;
     }
-    const confirmText = normalized.title
-      ? `Delete "${normalized.title}"?`
-      : "Delete this movie?";
+    const confirmText = "Delete this showtime?";
     if (!window.confirm(confirmText)) return;
 
     setError("");
     try {
-      await apiDelete(`/api/Movies/${normalized.id}`);
-      await loadMovies();
+      await apiDelete(`/api/Showtimes/${normalized.id}`);
+      await loadShowtimes();
     } catch (err) {
-      setError(err?.message || "Failed to delete movie.");
+      setError(err?.message || "Failed to delete showtime.");
     }
+  };
+
+  const renderMovieOptions = () => {
+    if (movies.length === 0) {
+      return (
+        <option value="" disabled>
+          No movies available
+        </option>
+      );
+    }
+    return movies.map((movie) => {
+      const id = movie?.id ?? movie?.Id;
+      const title = movie?.title ?? movie?.Title ?? "Untitled";
+      return (
+        <option key={id ?? title} value={id ?? ""}>
+          {title}
+        </option>
+      );
+    });
+  };
+
+  const renderHallOptions = () => {
+    if (halls.length === 0) {
+      return (
+        <option value="" disabled>
+          No halls available
+        </option>
+      );
+    }
+    return halls.map((hall) => {
+      const id = hall?.id ?? hall?.Id;
+      const name = hall?.name ?? hall?.Name ?? "Unnamed";
+      return (
+        <option key={id ?? name} value={id ?? ""}>
+          {name}
+        </option>
+      );
+    });
   };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="p-4 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h4 className="text-lg font-semibold text-gray-900 dark:text-white/90">Movies Management</h4>
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white/90">Showtimes Management</h4>
           <button
             type="button"
             onClick={handleAdd}
             className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
           >
             <i className="bi bi-plus-lg mr-2" aria-hidden="true"></i>
-            Add Movie
+            Add Showtime
           </button>
         </div>
         {error && (
@@ -186,83 +270,58 @@ export default function AdminMovies() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Title
+                  Movie
                 </label>
-                <input
-                  name="title"
-                  type="text"
+                <select
+                  name="movieId"
+                  value={formData.movieId}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
                   required
-                  value={formData.title}
+                >
+                  <option value="">Select movie</option>
+                  {renderMovieOptions()}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Hall
+                </label>
+                <select
+                  name="hallId"
+                  value={formData.hallId}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="Movie title"
+                  required
+                >
+                  <option value="">Select hall</option>
+                  {renderHallOptions()}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Start Time
+                </label>
+                <input
+                  name="startTime"
+                  type="datetime-local"
+                  value={formData.startTime}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+                  required
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Genre
+                  End Time
                 </label>
                 <input
-                  name="genre"
-                  type="text"
-                  value={formData.genre}
+                  name="endTime"
+                  type="datetime-local"
+                  value={formData.endTime}
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="Action, Comedy..."
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Release Year
-                </label>
-                <input
-                  name="releaseYear"
-                  type="number"
-                  min="0"
-                  value={formData.releaseYear}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="2025"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Duration (min)
-                </label>
-                <input
-                  name="duration"
-                  type="number"
-                  min="0"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="120"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  rows="3"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="Short description"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Poster URL
-                </label>
-                <input
-                  name="posterUrl"
-                  type="url"
-                  value={formData.posterUrl}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="https://example.com/poster.jpg"
+                  required
                 />
               </div>
             </div>
@@ -279,7 +338,7 @@ export default function AdminMovies() {
                 disabled={saving}
                 className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
               >
-                {saving ? "Saving..." : isEditing ? "Update Movie" : "Create Movie"}
+                {saving ? "Saving..." : isEditing ? "Update Showtime" : "Create Showtime"}
               </button>
             </div>
           </form>
@@ -288,66 +347,51 @@ export default function AdminMovies() {
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-900 dark:border-white/[0.05]">
               <tr>
-                <th className="px-4 py-3 font-medium">Poster</th>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Genre</th>
-                <th className="px-4 py-3 font-medium">Duration</th>
-                <th className="px-4 py-3 font-medium">Release Year</th>
+                <th className="px-4 py-3 font-medium">Movie</th>
+                <th className="px-4 py-3 font-medium">Hall</th>
+                <th className="px-4 py-3 font-medium">Start</th>
+                <th className="px-4 py-3 font-medium">End</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="6">
-                    Loading movies...
+                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="5">
+                    Loading showtimes...
                   </td>
                 </tr>
-              ) : movies.length === 0 ? (
+              ) : showtimes.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="6">
-                    No movies found.
+                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="5">
+                    No showtimes found.
                   </td>
                 </tr>
               ) : (
-                movies.map((movie, idx) => {
-                  const normalized = normalizeMovie(movie);
-                  const posterSeed = normalized.id ?? idx;
-                  const posterSrc = normalized.posterUrl?.trim()
-                    ? normalized.posterUrl
-                    : `https://picsum.photos/seed/${posterSeed}/64/64`;
-                  const durationLabel = normalized.duration ? `${normalized.duration} min` : "--";
-                  const yearLabel = normalized.releaseYear ? normalized.releaseYear : "--";
-
+                showtimes.map((showtime, idx) => {
+                  const normalized = normalizeShowtime(showtime);
+                  const movieLabel = normalized.movieTitle || `Movie #${normalized.movieId || "--"}`;
+                  const hallLabel = normalized.hallName || `Hall #${normalized.hallId || "--"}`;
                   return (
                     <tr key={normalized.id ?? idx} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
-                      <td className="px-4 py-3">
-                        <img
-                          src={posterSrc}
-                          alt="poster"
-                          className="h-12 w-12 rounded object-cover"
-                          width="48"
-                          height="48"
-                        />
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{normalized.title || "--"}</td>
-                      <td className="px-4 py-3 text-gray-900">{normalized.genre || "--"}</td>
-                      <td className="px-4 py-3 text-gray-900">{durationLabel}</td>
-                      <td className="px-4 py-3 text-gray-900">{yearLabel}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{movieLabel}</td>
+                      <td className="px-4 py-3 text-gray-900">{hallLabel}</td>
+                      <td className="px-4 py-3 text-gray-900">{formatDateTime(normalized.startTime)}</td>
+                      <td className="px-4 py-3 text-gray-900">{formatDateTime(normalized.endTime)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() => handleEdit(movie)}
+                          onClick={() => handleEdit(showtime)}
                           className="inline-flex items-center text-blue-600 transition-colors hover:text-blue-700"
-                          aria-label="Edit movie"
+                          aria-label="Edit showtime"
                         >
                           <i className="bi bi-pencil-square"></i>
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(movie)}
+                          onClick={() => handleDelete(showtime)}
                           className="ml-3 inline-flex items-center text-red-600 transition-colors hover:text-red-700"
-                          aria-label="Delete movie"
+                          aria-label="Delete showtime"
                         >
                           <i className="bi bi-trash"></i>
                         </button>
