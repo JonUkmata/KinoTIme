@@ -1,231 +1,376 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { apiGetAdminDashboard } from "../../../services/api";
 
-const stats = [
-  {
-    label: "Total Movies",
-    value: "128",
-    change: "+6.2%",
-    trend: "up",
-    icon: "bi-film",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-  },
-  {
-    label: "Active Halls",
-    value: "12",
-    change: "+1",
-    trend: "up",
-    icon: "bi-door-open",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-  },
-  {
-    label: "Tickets Sold",
-    value: "24.3k",
-    change: "+12.4%",
-    trend: "up",
-    icon: "bi-ticket-perforated",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-  },
-  {
-    label: "Revenue",
-    value: "$18.7k",
-    change: "-1.8%",
-    trend: "down",
-    icon: "bi-cash-coin",
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-600",
-  },
-];
+const formatNumber = (value) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "--";
+  return new Intl.NumberFormat().format(parsed);
+};
 
-const weeklyBookings = [
-  { day: "Mon", value: 42 },
-  { day: "Tue", value: 58 },
-  { day: "Wed", value: 36 },
-  { day: "Thu", value: 64 },
-  { day: "Fri", value: 78 },
-  { day: "Sat", value: 91 },
-  { day: "Sun", value: 69 },
-];
+const formatPercent = (value) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "--";
+  return `${parsed.toFixed(2)}%`;
+};
 
-const hallUtilization = [
-  { name: "Hall A", value: 86 },
-  { name: "Hall B", value: 72 },
-  { name: "Hall C", value: 64 },
-  { name: "Hall D", value: 58 },
-];
+const formatCurrency = (value) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "--";
+  return `EUR ${parsed.toFixed(2)}`;
+};
 
-const recentBookings = [
-  { movie: "Cosmic Odyssey", hall: "Hall A", time: "14:30", status: "Confirmed" },
-  { movie: "Shadow's Edge", hall: "Hall C", time: "16:10", status: "Pending" },
-  { movie: "Laugh Out Loud", hall: "Hall B", time: "18:45", status: "Confirmed" },
-  { movie: "Thunder Strike", hall: "Hall D", time: "21:00", status: "Canceled" },
-];
+const formatDate = (value) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString();
+};
 
-const statusStyles = {
-  Confirmed:
-    "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
-  Pending:
-    "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
-  Canceled:
-    "border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300",
+const formatTime = (value) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function Home() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     document.title = "Admin Dashboard | KinoTime";
   }, []);
 
-  const maxWeekly = Math.max(
-    ...weeklyBookings.map((item) => item.value),
-    1
-  );
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await apiGetAdminDashboard();
+      setData(result);
+    } catch (err) {
+      setError(err?.message || "Failed to load dashboard stats.");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const summaryCards = useMemo(() => {
+    if (!data) return [];
+    return [
+      {
+        label: "Total Movies",
+        value: formatNumber(data?.totals?.movies),
+        icon: "bi-film",
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-600",
+      },
+      {
+        label: "Total Halls",
+        value: formatNumber(data?.totals?.halls),
+        icon: "bi-door-open",
+        iconBg: "bg-emerald-50",
+        iconColor: "text-emerald-600",
+      },
+      {
+        label: "Total Showtimes",
+        value: formatNumber(data?.totals?.showtimes),
+        icon: "bi-calendar-event",
+        iconBg: "bg-amber-50",
+        iconColor: "text-amber-600",
+      },
+      {
+        label: "Total Reservations",
+        value: formatNumber(data?.totals?.reservations),
+        icon: "bi-ticket-perforated",
+        iconBg: "bg-rose-50",
+        iconColor: "text-rose-600",
+      },
+    ];
+  }, [data]);
+
+  const secondaryCards = useMemo(() => {
+    if (!data) return [];
+    return [
+      {
+        label: "Active Reservations",
+        value: `${formatNumber(data?.reservations?.active)} (${formatPercent(
+          data?.reservations?.activePercent
+        )})`,
+      },
+      {
+        label: "Cancelled Reservations",
+        value: `${formatNumber(data?.reservations?.cancelled)} (${formatPercent(
+          data?.reservations?.cancelledPercent
+        )})`,
+      },
+      {
+        label: "Showtimes Today",
+        value: formatNumber(data?.showtimes?.today),
+      },
+      {
+        label: "Showtimes This Week",
+        value: formatNumber(data?.showtimes?.thisWeek),
+      },
+      {
+        label: "Reservations Today",
+        value: formatNumber(data?.reservations?.today),
+      },
+      {
+        label: "Reservations This Week",
+        value: formatNumber(data?.reservations?.thisWeek),
+      },
+    ];
+  }, [data]);
+
+  const revenueCards = useMemo(() => {
+    if (!data) return [];
+    return [
+      {
+        label: "Revenue Total",
+        value: formatCurrency(data?.revenue?.total),
+      },
+      {
+        label: "Revenue Today",
+        value: formatCurrency(data?.revenue?.today),
+      },
+      {
+        label: "Revenue This Week",
+        value: formatCurrency(data?.revenue?.thisWeek),
+      },
+    ];
+  }, [data]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:col-span-6 xl:col-span-3 dark:border-white/[0.05] dark:bg-white/[0.03]"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {stat.label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white/90">
-                  {stat.value}
-                </p>
-              </div>
-              <div
-                className={`flex h-12 w-12 items-center justify-center rounded-full ${stat.iconBg} dark:bg-white/[0.06]`}
-              >
-                <i
-                  className={`bi ${stat.icon} text-xl ${stat.iconColor} dark:text-white/80`}
-                  aria-hidden="true"
-                ></i>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-2 text-sm">
-              <span
-                className={
-                  stat.trend === "up" ? "text-emerald-600" : "text-rose-600"
-                }
-              >
-                {stat.change}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                since last week
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-7 dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white/90">
-              Weekly Bookings
-            </h3>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Last 7 days
-            </span>
-          </div>
-          <div className="mt-6 flex h-48 items-end gap-3">
-            {weeklyBookings.map((item) => {
-              const height = Math.round((item.value / maxWeekly) * 100);
-              return (
-                <div key={item.day} className="flex flex-1 flex-col items-center gap-2">
-                  <div className="flex w-full flex-1 items-end rounded-md bg-blue-50 dark:bg-blue-500/10">
-                    <div
-                      className="w-full rounded-md bg-blue-600"
-                      style={{ height: `${height}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.day}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+    <div className="space-y-6 text-black">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-5 dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white/90">
-              Hall Utilization
-            </h3>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Today
-            </span>
-          </div>
-          <div className="mt-6 space-y-4">
-            {hallUtilization.map((hall) => (
-              <div key={hall.name}>
-                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                  <span>{hall.name}</span>
-                  <span>{hall.value}%</span>
-                </div>
-                <div className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/[0.06]">
+      {loading ? (
+        <div className="text-sm text-gray-600">Loading dashboard...</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            {summaryCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:col-span-6 xl:col-span-3 dark:border-white/[0.05] dark:bg-white/[0.03]"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      {stat.label}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-black">
+                      {stat.value}
+                    </p>
+                  </div>
                   <div
-                    className="h-2 rounded-full bg-emerald-500"
-                    style={{ width: `${hall.value}%` }}
-                  />
+                    className={`flex h-12 w-12 items-center justify-center rounded-full ${stat.iconBg} dark:bg-white/[0.06]`}
+                  >
+                    <i
+                      className={`bi ${stat.icon} text-xl ${stat.iconColor}`}
+                      aria-hidden="true"
+                    ></i>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
-        <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] dark:border-white/[0.05] dark:bg-white/[0.03]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white/90">
-              Recent Bookings
-            </h3>
-            <button className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-700">
-              View all
-            </button>
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            {secondaryCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:col-span-6 xl:col-span-4 dark:border-white/[0.05] dark:bg-white/[0.03]"
+              >
+                <p className="text-sm text-gray-600">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-black">
+                  {stat.value}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500 dark:border-white/[0.05] dark:text-gray-400">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Movie</th>
-                  <th className="px-4 py-3 font-medium">Hall</th>
-                  <th className="px-4 py-3 font-medium">Time</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {recentBookings.map((row) => (
-                  <tr key={`${row.movie}-${row.time}`}>
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white/90">
-                      {row.movie}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {row.hall}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {row.time}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusStyles[row.status] || "border-gray-200 bg-gray-50 text-gray-600"}`}
-                      >
-                        {row.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            {revenueCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] sm:col-span-6 xl:col-span-4 dark:border-white/[0.05] dark:bg-white/[0.03]"
+              >
+                <p className="text-sm text-gray-600">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-black">
+                  {stat.value}
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
+
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-6 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="text-base font-semibold text-black">
+                Top Movies (by reservations)
+              </h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Movie</th>
+                      <th className="px-4 py-3 font-medium">Reservations</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                    {data?.topMovies?.length ? (
+                      data.topMovies.map((row) => (
+                        <tr key={row.movieId ?? row.title}>
+                          <td className="px-4 py-3 font-medium text-black">
+                            {row.title || "Untitled"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatNumber(row.reservationsCount)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="px-4 py-3 text-sm text-gray-600" colSpan="2">
+                          No data available.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-6 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="text-base font-semibold text-black">
+                Top Showtimes (by reserved seats)
+              </h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Movie</th>
+                      <th className="px-4 py-3 font-medium">Hall</th>
+                      <th className="px-4 py-3 font-medium">Date</th>
+                      <th className="px-4 py-3 font-medium">Seats</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                    {data?.topShowtimes?.length ? (
+                      data.topShowtimes.map((row) => (
+                        <tr key={row.showtimeId}>
+                          <td className="px-4 py-3 font-medium text-black">
+                            {row.movieTitle || "Untitled"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {row.hallName || "--"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatDate(row.startTime)} {formatTime(row.startTime)}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatNumber(row.reservedSeats)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="px-4 py-3 text-sm text-gray-600" colSpan="4">
+                          No data available.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-6 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="text-base font-semibold text-black">
+                Occupancy by Showtime
+              </h3>
+              <div className="mt-4 space-y-4">
+                {data?.occupancyByShowtime?.length ? (
+                  data.occupancyByShowtime.map((row) => (
+                    <div key={row.showtimeId}>
+                      <div className="flex items-center justify-between text-sm text-gray-700">
+                        <span>
+                          {row.movieTitle || "Untitled"} - {row.hallName || "--"}
+                        </span>
+                        <span>{formatPercent(row.occupancyPercent)}</span>
+                      </div>
+                      <div className="mt-2 h-2 rounded-full bg-gray-100 dark:bg-white/[0.06]">
+                        <div
+                          className="h-2 rounded-full bg-emerald-500"
+                          style={{ width: `${row.occupancyPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-gray-600">
+                        {formatNumber(row.reservedSeats)} / {formatNumber(row.totalSeats)} seats
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-600">No data available.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="col-span-12 rounded-xl border border-gray-200 bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)] xl:col-span-6 dark:border-white/[0.05] dark:bg-white/[0.03]">
+              <h3 className="text-base font-semibold text-black">
+                Avg Occupancy by Movie
+              </h3>
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Movie</th>
+                      <th className="px-4 py-3 font-medium">Avg Occupancy</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
+                    {data?.avgOccupancyByMovie?.length ? (
+                      data.avgOccupancyByMovie.map((row) => (
+                        <tr key={row.movieId ?? row.title}>
+                          <td className="px-4 py-3 font-medium text-black">
+                            {row.title || "Untitled"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-700">
+                            {formatPercent(row.avgOccupancyPercent)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="px-4 py-3 text-sm text-gray-600" colSpan="2">
+                          No data available.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

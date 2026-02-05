@@ -102,3 +102,8 @@ export async function apiCancelReservation(reservationId) {
   return apiPost(`/api/Reservations/${encodedId}/cancel`);
 }
 
+// Helper for admin dashboard stats
+export async function apiGetAdminDashboard() {
+  return apiGet("/api/admin/dashboard");
+}
+

@@ -68,7 +68,7 @@ namespace KinoTimeBackEnd.Controllers
             };
             Response.Cookies.Append("kinotime_auth", token, cookieOptions);
             await RotateRefreshTokenAsync(user.Id);
-            return Ok(new { token });
+            return Ok(new { message = "Login successful" });
         }
 
         [HttpPost("refresh")]
@@ -97,7 +97,7 @@ namespace KinoTimeBackEnd.Controllers
             SetAccessCookie(accessToken);
             await RotateRefreshTokenAsync(user.Id, storedToken);
 
-            return Ok(new { token = accessToken });
+            return Ok(new { message = "Token refreshed" });
         }
 
         [Authorize]
