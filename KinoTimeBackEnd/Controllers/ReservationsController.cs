@@ -161,6 +161,44 @@ namespace KinoTimeBackEnd.Controllers
                 return Conflict(new { message = "Rezervimi nuk u krye sepse disa ulese jane rezervuar." });
             }
         }
+
+        // GET: api/Reservations/my
+        [Authorize]
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyReservations()
+        {
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var reservations = await _context.Reservations
+                .AsNoTracking()
+                .Where(r => r.UserId == userId)
+                .Include(r => r.Showtime)
+                    .ThenInclude(s => s.Movie)
+                .Include(r => r.Showtime)
+                    .ThenInclude(s => s.Hall)
+                .Include(r => r.ReservationSeats)
+                    .ThenInclude(rs => rs.Seat)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            var result = reservations.Select(r => new MyReservationDto
+            {
+                ReservationId = r.Id,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt,
+                MovieTitle = r.Showtime.Movie.Title,
+                ShowtimeStartTime = r.Showtime.StartTime,
+                HallName = r.Showtime.Hall.Name,
+                SeatLabels = r.ReservationSeats
+                    .OrderBy(rs => rs.Seat.Row)
+                    .ThenBy(rs => rs.Seat.Number)
+                    .Select(rs => $"{rs.Seat.Row}{rs.Seat.Number}")
+                    .ToList()
+            }).ToList();
+
+            return Ok(result);
+        }
     }
 
     public class SeatMapSeatDto
@@ -184,5 +222,16 @@ namespace KinoTimeBackEnd.Controllers
 
         [Required]
         public List<int> SeatIds { get; set; } = new List<int>();
+    }
+
+    public class MyReservationDto
+    {
+        public int ReservationId { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string MovieTitle { get; set; } = string.Empty;
+        public DateTime ShowtimeStartTime { get; set; }
+        public string HallName { get; set; } = string.Empty;
+        public List<string> SeatLabels { get; set; } = new List<string>();
     }
 }
