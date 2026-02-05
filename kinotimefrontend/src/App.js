@@ -1,23 +1,25 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import AdminMovies from './admin/pages/AdminMovies.jsx';
-import AdminHalls from './admin/pages/AdminHalls.jsx';
-import AdminShowtimes from './admin/pages/AdminShowtimes.jsx';
-import AdminDashboard from './admin/pages/AdminDashboard.jsx';
-import AppLayout from './admin/layout/AppLayout.jsx';
-import Login from './auth/Login';
-import Register from './auth/Register';
+import Loading from './components/Loading.jsx';
 import Navbar from './components/Navbar';
-import PlayingNow from './user/pages/PlayingNow.jsx';
-import AllMovies from './user/pages/AllMovies.jsx';
-import AboutUs from './user/pages/AboutUs.jsx';
-import ComingSoon from './user/pages/ComingSoon.jsx';
-import MovieDetails from './user/pages/MovieDetails.jsx';
-import SeatSelection from './user/pages/SeatSelection.jsx';
-import MyReservations from './user/pages/MyReservations.jsx';
-import UserProfile from './user/pages/UserProfile.jsx';
-import Unauthorized from './pages/Unauthorized.jsx';
 import ProtectedRoute from './routes/ProtectedRoute';
+
+const AdminMovies = lazy(() => import('./admin/pages/AdminMovies.jsx'));
+const AdminHalls = lazy(() => import('./admin/pages/AdminHalls.jsx'));
+const AdminShowtimes = lazy(() => import('./admin/pages/AdminShowtimes.jsx'));
+const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard.jsx'));
+const AppLayout = lazy(() => import('./admin/layout/AppLayout.jsx'));
+const Login = lazy(() => import('./auth/Login'));
+const Register = lazy(() => import('./auth/Register'));
+const PlayingNow = lazy(() => import('./user/pages/PlayingNow.jsx'));
+const AllMovies = lazy(() => import('./user/pages/AllMovies.jsx'));
+const AboutUs = lazy(() => import('./user/pages/AboutUs.jsx'));
+const ComingSoon = lazy(() => import('./user/pages/ComingSoon.jsx'));
+const MovieDetails = lazy(() => import('./user/pages/MovieDetails.jsx'));
+const SeatSelection = lazy(() => import('./user/pages/SeatSelection.jsx'));
+const MyReservations = lazy(() => import('./user/pages/MyReservations.jsx'));
+const UserProfile = lazy(() => import('./user/pages/UserProfile.jsx'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized.jsx'));
 
 function App() {
   // Home page component
@@ -39,38 +41,40 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* Default: landing goes to login */}
-        <Route path="/" element={<Navigate to="/auth/login" replace />} />
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/auth/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          {/* Default: landing goes to login */}
+          <Route path="/" element={<Navigate to="/auth/login" replace />} />
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<UserLayout />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/playing" element={<PlayingNow />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/coming-soon" element={<ComingSoon />} />
-            <Route path="/movies" element={<AllMovies />} />
-            <Route path="/movies/:id" element={<MovieDetails />} />
-            <Route path="/reserve/:showtimeId" element={<SeatSelection />} />
-            <Route path="/my-reservations" element={<MyReservations />} />
-            <Route path="/profile" element={<UserProfile />} />
-          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route element={<UserLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/playing" element={<PlayingNow />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/coming-soon" element={<ComingSoon />} />
+              <Route path="/movies" element={<AllMovies />} />
+              <Route path="/movies/:id" element={<MovieDetails />} />
+              <Route path="/reserve/:showtimeId" element={<SeatSelection />} />
+              <Route path="/my-reservations" element={<MyReservations />} />
+              <Route path="/profile" element={<UserProfile />} />
+            </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<AppLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="movies" element={<AdminMovies />} />
-              <Route path="halls" element={<AdminHalls />} />
-              <Route path="showtimes" element={<AdminShowtimes />} />
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AppLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="movies" element={<AdminMovies />} />
+                <Route path="halls" element={<AdminHalls />} />
+                <Route path="showtimes" element={<AdminShowtimes />} />
+              </Route>
             </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/auth/login" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
