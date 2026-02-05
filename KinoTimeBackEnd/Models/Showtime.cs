@@ -25,5 +25,10 @@ namespace KinoTimeBackEnd.Models
 
         [Required]
         public DateTime EndTime { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price duhet te jete me i madh se 0.")]
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal Price { get; set; }
     }
 }

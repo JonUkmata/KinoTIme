@@ -68,6 +68,9 @@ namespace KinoTimeBackEnd.Controllers
             if (dto.EndTime <= dto.StartTime)
                 return BadRequest("EndTime duhet te jete me i madh se StartTime.");
 
+            if (dto.Price <= 0)
+                return BadRequest("Price duhet te jete me i madh se 0.");
+
             var movie = await _context.Movies.FindAsync(dto.MovieId);
             if (movie == null)
                 return BadRequest("Filmi nuk ekziston.");
@@ -82,6 +85,7 @@ namespace KinoTimeBackEnd.Controllers
                 HallId = dto.HallId,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
+                Price = dto.Price,
                 Movie = movie,
                 Hall = hall
             };
@@ -111,6 +115,9 @@ namespace KinoTimeBackEnd.Controllers
 
             if (dto.EndTime <= dto.StartTime)
                 return BadRequest("EndTime duhet te jete me i madh se StartTime.");
+
+            if (dto.Price <= 0)
+                return BadRequest("Price duhet te jete me i madh se 0.");
 
             var existingShowtime = await _context.Showtimes.FindAsync(id);
             if (existingShowtime == null)
@@ -142,6 +149,7 @@ namespace KinoTimeBackEnd.Controllers
             existingShowtime.EndTime = dto.EndTime;
             existingShowtime.MovieId = dto.MovieId;
             existingShowtime.HallId = dto.HallId;
+            existingShowtime.Price = dto.Price;
             existingShowtime.Movie = movie;
             existingShowtime.Hall = hall;
 
@@ -178,6 +186,10 @@ namespace KinoTimeBackEnd.Controllers
 
         [Required]
         public DateTime EndTime { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price duhet te jete me i madh se 0.")]
+        public decimal Price { get; set; }
     }
 
     public class ShowtimeUpdateDto
@@ -196,6 +208,10 @@ namespace KinoTimeBackEnd.Controllers
 
         [Required]
         public DateTime EndTime { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price duhet te jete me i madh se 0.")]
+        public decimal Price { get; set; }
     }
 }
 

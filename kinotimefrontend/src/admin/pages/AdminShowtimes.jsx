@@ -7,6 +7,7 @@ export default function AdminShowtimes() {
     hallId: "",
     startTime: "",
     endTime: "",
+    price: "",
   };
 
   const [showtimes, setShowtimes] = useState([]);
@@ -36,6 +37,7 @@ export default function AdminShowtimes() {
       0,
     startTime: showtime?.startTime ?? showtime?.StartTime ?? "",
     endTime: showtime?.endTime ?? showtime?.EndTime ?? "",
+    price: showtime?.price ?? showtime?.Price ?? 0,
     movieTitle: showtime?.movie?.title ?? showtime?.Movie?.Title ?? "",
     hallName: showtime?.hall?.name ?? showtime?.Hall?.Name ?? "",
   });
@@ -52,6 +54,13 @@ export default function AdminShowtimes() {
       return value.slice(0, 16);
     }
     return value;
+  };
+
+  const formatPrice = (value) => {
+    if (value === null || value === undefined || value === "") return "--";
+    const parsed = Number(value);
+    if (Number.isNaN(parsed)) return value;
+    return parsed.toFixed(2);
   };
 
   const formatDateTime = (value) => {
@@ -121,6 +130,7 @@ export default function AdminShowtimes() {
       hallId: String(normalized.hallId || ""),
       startTime: toInputDateTime(normalized.startTime),
       endTime: toInputDateTime(normalized.endTime),
+      price: normalized.price ? String(normalized.price) : "",
     });
     setError("");
   };
@@ -142,6 +152,7 @@ export default function AdminShowtimes() {
       hallId: toNumber(formData.hallId),
       startTime: formData.startTime,
       endTime: formData.endTime,
+      price: toNumber(formData.price),
     };
 
     if (!payload.movieId || !payload.hallId) {
@@ -163,6 +174,11 @@ export default function AdminShowtimes() {
 
     if (end <= start) {
       setError("End time must be after start time.");
+      return;
+    }
+
+    if (payload.price <= 0) {
+      setError("Price must be greater than 0.");
       return;
     }
 
@@ -324,6 +340,21 @@ export default function AdminShowtimes() {
                   required
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Price
+                </label>
+                <input
+                  name="price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
               <button
@@ -351,19 +382,20 @@ export default function AdminShowtimes() {
                 <th className="px-4 py-3 font-medium">Hall</th>
                 <th className="px-4 py-3 font-medium">Start</th>
                 <th className="px-4 py-3 font-medium">End</th>
+                <th className="px-4 py-3 font-medium">Price</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="5">
+                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="6">
                     Loading showtimes...
                   </td>
                 </tr>
               ) : showtimes.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="5">
+                  <td className="px-4 py-6 text-center text-sm text-gray-500" colSpan="6">
                     No showtimes found.
                   </td>
                 </tr>
@@ -378,6 +410,7 @@ export default function AdminShowtimes() {
                       <td className="px-4 py-3 text-gray-900">{hallLabel}</td>
                       <td className="px-4 py-3 text-gray-900">{formatDateTime(normalized.startTime)}</td>
                       <td className="px-4 py-3 text-gray-900">{formatDateTime(normalized.endTime)}</td>
+                      <td className="px-4 py-3 text-gray-900">{formatPrice(normalized.price)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button
                           type="button"

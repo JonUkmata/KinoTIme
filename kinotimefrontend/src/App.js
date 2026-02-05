@@ -13,6 +13,7 @@ import AllMovies from './user/pages/AllMovies.jsx';
 import AboutUs from './user/pages/AboutUs.jsx';
 import ComingSoon from './user/pages/ComingSoon.jsx';
 import MovieDetails from './user/pages/MovieDetails.jsx';
+import SeatSelection from './user/pages/SeatSelection.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -51,6 +52,7 @@ function App() {
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/movies" element={<AllMovies />} />
             <Route path="/movies/:id" element={<MovieDetails />} />
+            <Route path="/reserve/:showtimeId" element={<SeatSelection />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

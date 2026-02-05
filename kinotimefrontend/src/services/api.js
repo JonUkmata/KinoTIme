@@ -76,3 +76,17 @@ export async function apiGetShowtimesByMovieId(movieId) {
   return apiGet(`/api/Showtimes?movieId=${encodedId}`);
 }
 
+// Helper for seat map by showtime id
+export async function apiGetSeatMap(showtimeId) {
+  if (!showtimeId) return null;
+  const encodedId = encodeURIComponent(showtimeId);
+  return apiGet(`/api/Reservations/seatmap/${encodedId}`);
+}
+
+// Helper for showtime by id
+export async function apiGetShowtime(showtimeId) {
+  if (!showtimeId) return null;
+  const encodedId = encodeURIComponent(showtimeId);
+  return apiGet(`/api/Showtimes/${encodedId}`);
+}
+
