@@ -94,6 +94,9 @@ namespace KinoTimeBackEnd.Controllers
             if (seatIds.Count != dto.SeatIds.Count)
                 return BadRequest("SeatIds permban dublime.");
 
+            if (seatIds.Any(id => id <= 0))
+                return BadRequest("SeatIds jo valide.");
+
             var seats = await _context.Seats
                 .Where(s => s.HallId == showtime.HallId && seatIds.Contains(s.Id))
                 .ToListAsync();
@@ -265,6 +268,7 @@ namespace KinoTimeBackEnd.Controllers
         public int ShowtimeId { get; set; }
 
         [Required]
+        [MinLength(1, ErrorMessage = "SeatIds jane te detyrueshme.")]
         public List<int> SeatIds { get; set; } = new List<int>();
     }
 

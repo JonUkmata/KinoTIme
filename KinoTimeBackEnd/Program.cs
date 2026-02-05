@@ -6,6 +6,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
 
 
 // CORS për React
@@ -14,14 +17,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins(
-                    "http://localhost:3000", // CRA user app
-                    "http://localhost:3001", // optional CRA admin app
-                    "http://localhost:5173"  // Vite (TailAdmin default)
-                )
-                  .AllowCredentials()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            if (allowedOrigins.Length == 0)
+                return;
+
+            policy.WithOrigins(allowedOrigins)
+                .AllowCredentials()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
         });
 });
 
@@ -74,6 +76,16 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { message = "Internal server error" });
+    });
+});
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
