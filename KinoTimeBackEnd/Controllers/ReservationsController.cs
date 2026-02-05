@@ -199,6 +199,50 @@ namespace KinoTimeBackEnd.Controllers
 
             return Ok(result);
         }
+
+        // POST: api/Reservations/{id}/cancel
+        [Authorize]
+        [HttpPost("{id}/cancel")]
+        public async Task<IActionResult> CancelReservation(int id)
+        {
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var reservation = await _context.Reservations
+                .Include(r => r.ReservationSeats)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (reservation == null)
+                return NotFound();
+
+            if (reservation.UserId != userId)
+                return Forbid();
+
+            if (reservation.Status == "Cancelled")
+                return BadRequest(new { message = "Rezervimi eshte anuluar." });
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                reservation.Status = "Cancelled";
+
+                if (reservation.ReservationSeats.Count > 0)
+                {
+                    _context.ReservationSeats.RemoveRange(reservation.ReservationSeats);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { message = "Rezervimi u anulua." });
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 
     public class SeatMapSeatDto
