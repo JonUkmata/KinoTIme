@@ -90,3 +90,8 @@ export async function apiGetShowtime(showtimeId) {
   return apiGet(`/api/Showtimes/${encodedId}`);
 }
 
+// Helper for current user profile
+export async function apiGetMe() {
+  return apiGet("/api/Auth/me");
+}
+

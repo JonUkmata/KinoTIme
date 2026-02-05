@@ -13,11 +13,26 @@ const normalizeReservation = (reservation) => ({
   seatLabels: reservation?.seatLabels ?? reservation?.SeatLabels ?? [],
 });
 
-const formatDateTime = (value) => {
+const formatDate = (value) => {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
+  return date.toLocaleDateString();
+};
+
+const formatTime = (value) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatStatus = (value) => {
+  if (!value) return "--";
+  return value.toLowerCase();
 };
 
 export default function MyReservations() {
@@ -51,23 +66,9 @@ export default function MyReservations() {
 
   return (
     <div className="min-h-screen bg-black px-6 py-8 text-white">
-      <div className="mx-auto w-full max-w-5xl">
-        <button
-          type="button"
-          onClick={() => navigate("/movies")}
-          className="mb-6 inline-flex items-center gap-2 text-sm text-gray-300 transition hover:text-white"
-        >
-          <span className="text-lg">&lt;</span>
-          Back to Movies
-        </button>
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold">My Reservations</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Your recent bookings and seat details.
-            </p>
-          </div>
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-semibold">My Reservations</h1>
           <button
             type="button"
             onClick={loadReservations}
@@ -90,49 +91,52 @@ export default function MyReservations() {
             You do not have any reservations yet.
           </div>
         ) : (
-          <div className="mt-6 grid gap-4">
-            {normalizedReservations.map((reservation) => {
-              const seatLabels = Array.isArray(reservation.seatLabels)
-                ? reservation.seatLabels.join(", ")
-                : "";
-              return (
-                <div
-                  key={reservation.id ?? reservation.createdAt}
-                  className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                        Movie
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-white">
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/40">
+            <table className="min-w-full text-left text-sm text-gray-200">
+              <thead className="border-b border-zinc-800 text-xs uppercase tracking-wider text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3">Reservation ID</th>
+                  <th className="px-4 py-3">Movie</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Hall</th>
+                  <th className="px-4 py-3">Seats</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {normalizedReservations.map((reservation, index) => {
+                  const seatLabels = Array.isArray(reservation.seatLabels)
+                    ? reservation.seatLabels.join(", ")
+                    : "";
+                  return (
+                    <tr key={reservation.id ?? reservation.createdAt ?? index}>
+                      <td className="px-4 py-3 text-[#e50914]">
+                        {reservation.id ?? `r${index + 1}`}
+                      </td>
+                      <td className="px-4 py-3">
                         {reservation.movieTitle || "Untitled"}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-400">
-                        {reservation.hallName || "Hall"} •{" "}
-                        {formatDateTime(reservation.showtimeStartTime)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex rounded-full bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-200">
-                        {reservation.status || "Unknown"}
-                      </span>
-                      <p className="mt-2 text-xs text-zinc-500">
-                        Reserved {formatDateTime(reservation.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                      Seats
-                    </p>
-                    <p className="mt-2 text-sm text-white">
-                      {seatLabels || "--"}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatDate(reservation.showtimeStartTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatTime(reservation.showtimeStartTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {reservation.hallName || "--"}
+                      </td>
+                      <td className="px-4 py-3">{seatLabels || "--"}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex rounded-full bg-emerald-600/20 px-3 py-1 text-xs font-semibold text-emerald-300">
+                          {formatStatus(reservation.status) || "unknown"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

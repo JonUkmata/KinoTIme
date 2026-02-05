@@ -102,12 +102,27 @@ namespace KinoTimeBackEnd.Controllers
 
         [Authorize]
         [HttpGet("me")]
-        public IActionResult Me()
+        public async Task<IActionResult> Me()
         {
-            var userId = User.FindFirst("UserId")?.Value;
-            var username = User.FindFirst("Username")?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            return Ok(new { userId, username, role });
+            if (!int.TryParse(User.FindFirst("UserId")?.Value, out var userId))
+                return Unauthorized();
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => new { u.Id, u.Username, u.Email, u.Role })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                return Unauthorized();
+
+            return Ok(new
+            {
+                userId = user.Id,
+                username = user.Username,
+                email = user.Email,
+                role = user.Role
+            });
         }
 
         [Authorize]

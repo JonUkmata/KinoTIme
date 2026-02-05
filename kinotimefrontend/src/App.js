@@ -15,6 +15,7 @@ import ComingSoon from './user/pages/ComingSoon.jsx';
 import MovieDetails from './user/pages/MovieDetails.jsx';
 import SeatSelection from './user/pages/SeatSelection.jsx';
 import MyReservations from './user/pages/MyReservations.jsx';
+import UserProfile from './user/pages/UserProfile.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import ProtectedRoute from './routes/ProtectedRoute';
 
@@ -55,6 +56,7 @@ function App() {
             <Route path="/movies/:id" element={<MovieDetails />} />
             <Route path="/reserve/:showtimeId" element={<SeatSelection />} />
             <Route path="/my-reservations" element={<MyReservations />} />
+            <Route path="/profile" element={<UserProfile />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
