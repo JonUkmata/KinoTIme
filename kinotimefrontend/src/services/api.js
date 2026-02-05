@@ -95,3 +95,10 @@ export async function apiGetMe() {
   return apiGet("/api/Auth/me");
 }
 
+// Helper to cancel reservation by id
+export async function apiCancelReservation(reservationId) {
+  if (!reservationId) return null;
+  const encodedId = encodeURIComponent(reservationId);
+  return apiPost(`/api/Reservations/${encodedId}/cancel`);
+}
+

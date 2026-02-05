@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiGet } from "../../services/api";
+import { apiCancelReservation, apiGet } from "../../services/api";
 
 const normalizeReservation = (reservation) => ({
   id: reservation?.reservationId ?? reservation?.ReservationId,
@@ -35,11 +35,30 @@ const formatStatus = (value) => {
   return value.toLowerCase();
 };
 
+const getStatusClasses = (status) => {
+  const normalized = formatStatus(status);
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "bg-red-600/20 text-red-300";
+  }
+  if (normalized === "active" || normalized === "confirmed") {
+    return "bg-emerald-600/20 text-emerald-300";
+  }
+  return "bg-zinc-700/40 text-zinc-300";
+};
+
 export default function MyReservations() {
   const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [confirmTarget, setConfirmTarget] = useState(null);
   const [error, setError] = useState("");
+
+  const isCancelable = (status) => {
+    if (!status) return false;
+    const normalized = status.toLowerCase();
+    return normalized === "active" || normalized === "confirmed";
+  };
 
   const loadReservations = async () => {
     setLoading(true);
@@ -58,6 +77,29 @@ export default function MyReservations() {
   useEffect(() => {
     loadReservations();
   }, []);
+
+  const handleCancel = async (reservation) => {
+    if (!reservation?.id) return;
+    setError("");
+    setCancellingId(reservation.id);
+    try {
+      await apiCancelReservation(reservation.id);
+      await loadReservations();
+    } catch (err) {
+      setError(err?.message || "Failed to cancel reservation.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const openConfirm = (reservation) => {
+    if (!reservation?.id) return;
+    setConfirmTarget(reservation);
+  };
+
+  const closeConfirm = () => {
+    setConfirmTarget(null);
+  };
 
   const normalizedReservations = useMemo(
     () => reservations.map((reservation) => normalizeReservation(reservation)),
@@ -102,6 +144,7 @@ export default function MyReservations() {
                   <th className="px-4 py-3">Hall</th>
                   <th className="px-4 py-3">Seats</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
@@ -128,9 +171,27 @@ export default function MyReservations() {
                       </td>
                       <td className="px-4 py-3">{seatLabels || "--"}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-emerald-600/20 px-3 py-1 text-xs font-semibold text-emerald-300">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(
+                            reservation.status
+                          )}`}
+                        >
                           {formatStatus(reservation.status) || "unknown"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isCancelable(reservation.status) ? (
+                          <button
+                            type="button"
+                            onClick={() => openConfirm(reservation)}
+                            disabled={cancellingId === reservation.id}
+                            className="rounded-full border border-red-500/50 px-3 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {cancellingId === reservation.id ? "Cancelling..." : "Cancel"}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-zinc-500">--</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -140,6 +201,37 @@ export default function MyReservations() {
           </div>
         )}
       </div>
+
+      {confirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-[#1f1f23] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+            <h2 className="text-lg font-semibold text-white">Cancel reservation</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              Are you sure you want to cancel this reservation?
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeConfirm}
+                className="rounded-full border border-zinc-600 px-4 py-2 text-sm text-gray-200 transition hover:border-zinc-500 hover:text-white"
+              >
+                Keep
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const target = confirmTarget;
+                  closeConfirm();
+                  await handleCancel(target);
+                }}
+                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+              >
+                Cancel Reservation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
