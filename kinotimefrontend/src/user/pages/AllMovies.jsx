@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiGet } from "../../services/api";
 
 export default function AllMovies() {
@@ -112,8 +113,8 @@ export default function AllMovies() {
             const poster = movie.posterUrl?.trim()
               ? movie.posterUrl
               : `https://picsum.photos/seed/${movie.id ?? movie.title}/600/900`;
-            return (
-              <div key={movie.id ?? movie.title} className="group">
+            const content = (
+              <>
                 <div className="overflow-hidden rounded-xl bg-zinc-900 transition-transform group-hover:scale-[1.02]">
                   <div className="aspect-[2/3] w-full">
                     <img
@@ -126,6 +127,20 @@ export default function AllMovies() {
                 <p className="mt-3 text-sm font-semibold text-white line-clamp-2">
                   {movie.title || "Untitled"}
                 </p>
+              </>
+            );
+
+            if (movie.id) {
+              return (
+                <Link key={movie.id} to={`/movies/${movie.id}`} className="group">
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <div key={movie.title} className="group">
+                {content}
               </div>
             );
           })}

@@ -69,3 +69,10 @@ export async function apiDelete(endpoint) {
   return handleResponse(response);
 }
 
+// Helper for showtimes by movie id
+export async function apiGetShowtimesByMovieId(movieId) {
+  if (!movieId) return [];
+  const encodedId = encodeURIComponent(movieId);
+  return apiGet(`/api/Showtimes?movieId=${encodedId}`);
+}
+
