@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut } from "../../services/api";
 
 export default function AdminHalls() {
+  const STANDARD_CAPACITY = 120;
   const emptyForm = {
     name: "",
-    capacity: "",
   };
 
   const [halls, setHalls] = useState([]);
@@ -21,17 +21,6 @@ export default function AdminHalls() {
     name: hall?.name ?? hall?.Name ?? "",
     capacity: hall?.capacity ?? hall?.Capacity ?? 0,
   });
-
-  const toNumber = (value) => {
-    if (value === "" || value === null || value === undefined) return 0;
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
-
-  const toStringValue = (value) => {
-    if (value === null || value === undefined || value === 0) return "";
-    return String(value);
-  };
 
   const loadHalls = async () => {
     setLoading(true);
@@ -76,7 +65,6 @@ export default function AdminHalls() {
     setEditingId(normalized.id);
     setFormData({
       name: normalized.name,
-      capacity: toStringValue(normalized.capacity),
     });
     setError("");
   };
@@ -95,16 +83,11 @@ export default function AdminHalls() {
 
     const payload = {
       name: formData.name.trim(),
-      capacity: toNumber(formData.capacity),
+      capacity: STANDARD_CAPACITY,
     };
 
     if (!payload.name) {
       setError("Name is required.");
-      return;
-    }
-
-    if (payload.capacity <= 0) {
-      setError("Capacity must be greater than 0.");
       return;
     }
 
@@ -187,18 +170,11 @@ export default function AdminHalls() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  Capacity
+                  Capacity (fixed)
                 </label>
-                <input
-                  name="capacity"
-                  type="number"
-                  min="1"
-                  required
-                  value={formData.capacity}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="100"
-                />
+                <div className="flex h-[38px] items-center rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900">
+                  {STANDARD_CAPACITY}
+                </div>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-end gap-3">

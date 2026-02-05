@@ -5,6 +5,10 @@ namespace KinoTimeBackEnd.Data
 {
     public class CinemaDbContext : DbContext
     {
+        public const int StandardHallRows = 10;
+        public const int StandardSeatsPerRow = 12;
+        public const int StandardHallCapacity = StandardHallRows * StandardSeatsPerRow;
+
         public CinemaDbContext(DbContextOptions<CinemaDbContext> options) : base(options)
         {
         }
