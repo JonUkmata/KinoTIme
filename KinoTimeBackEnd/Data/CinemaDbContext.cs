@@ -79,13 +79,13 @@ namespace KinoTimeBackEnd.Data
                 .HasOne(rs => rs.Seat)
                 .WithMany()
                 .HasForeignKey(rs => rs.SeatId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ReservationSeat>()
                 .HasOne(rs => rs.Showtime)
                 .WithMany()
                 .HasForeignKey(rs => rs.ShowtimeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
     }
