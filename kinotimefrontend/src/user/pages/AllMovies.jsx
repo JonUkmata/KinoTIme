@@ -1,60 +1,80 @@
-import { useState } from "react";
-
-const genres = [
-  "All",
-  "Action",
-  "Comedy",
-  "Horror",
-  "Sci-Fi",
-  "Fantasy",
-  "Romance",
-  "Thriller",
-];
-
-const moviesData = [
-  {
-    id: 1,
-    title: "Movie 1",
-    genre: "Action",
-    posterUrl: "/Filmi1.jpg",
-  },
-  {
-    id: 2,
-    title: "Movie 2",
-    genre: "Horror",
-    posterUrl: "/Filmi2.jpg",
-  },
-  {
-    id: 3,
-    title: "Movie 3",
-    genre: "Comedy",
-    posterUrl: "/Filmi3.jpeg",
-  },
-  {
-    id: 4,
-    title: "Movie 4",
-    genre: "Thriller",
-    posterUrl: "/Filmi3.jpeg",
-  },
-];
+import { useEffect, useMemo, useState } from "react";
+import { apiGet } from "../../services/api";
 
 export default function AllMovies() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [search, setSearch] = useState("");
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredMovies = moviesData.filter((movie) => {
-    const matchesGenre =
-      selectedGenre === "All" || movie.genre === selectedGenre;
-    const matchesSearch = movie.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    return matchesGenre && matchesSearch;
+  const normalizeMovie = (movie) => ({
+    id: movie?.id ?? movie?.Id,
+    title: movie?.title ?? movie?.Title ?? "",
+    genre: movie?.genre ?? movie?.Genre ?? "",
+    posterUrl: movie?.posterUrl ?? movie?.PosterUrl ?? movie?.poster ?? "",
   });
+
+  const loadMovies = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiGet("/api/Movies");
+      setMovies(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err?.message || "Failed to load movies.");
+      setMovies([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  const normalizedMovies = useMemo(
+    () => movies.map((movie) => normalizeMovie(movie)),
+    [movies]
+  );
+
+  const genreOptions = useMemo(() => {
+    const uniqueGenres = new Set();
+    normalizedMovies.forEach((movie) => {
+      const genre = (movie.genre || "").trim();
+      if (genre) {
+        uniqueGenres.add(genre);
+      }
+    });
+    return ["All", ...Array.from(uniqueGenres)];
+  }, [normalizedMovies]);
+
+  useEffect(() => {
+    if (!genreOptions.includes(selectedGenre)) {
+      setSelectedGenre("All");
+    }
+  }, [genreOptions, selectedGenre]);
+
+  const filteredMovies = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return normalizedMovies.filter((movie) => {
+      const genre = (movie.genre || "").trim();
+      const matchesGenre = selectedGenre === "All" || genre === selectedGenre;
+      const matchesSearch =
+        term.length === 0 || movie.title.toLowerCase().includes(term);
+      return matchesGenre && matchesSearch;
+    });
+  }, [normalizedMovies, selectedGenre, search]);
 
   return (
     <div className="min-h-screen bg-black text-white px-10 py-8">
       <h1 className="text-3xl font-semibold mb-6">All Movies</h1>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Search */}
       <input
@@ -67,7 +87,7 @@ export default function AllMovies() {
 
       {/* Genre filter */}
       <div className="flex gap-3 mb-8 flex-wrap">
-        {genres.map((genre) => (
+        {genreOptions.map((genre) => (
           <button
             key={genre}
             onClick={() => setSelectedGenre(genre)}
@@ -82,22 +102,35 @@ export default function AllMovies() {
         ))}
       </div>
 
-      {/* Movies grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        {filteredMovies.map((movie) => (
-          <div
-            key={movie.id}
-            className="rounded-xl overflow-hidden bg-zinc-900 hover:scale-105 transition"
-          >
-            <img
-              src={movie.posterUrl}
-              alt={movie.title}
-              className="w-full h-96 object-cover"
-            />
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-sm text-gray-400">Loading movies...</div>
+      ) : filteredMovies.length === 0 ? (
+        <div className="text-sm text-gray-400">No movies found.</div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {filteredMovies.map((movie) => {
+            const poster = movie.posterUrl?.trim()
+              ? movie.posterUrl
+              : `https://picsum.photos/seed/${movie.id ?? movie.title}/600/900`;
+            return (
+              <div key={movie.id ?? movie.title} className="group">
+                <div className="overflow-hidden rounded-xl bg-zinc-900 transition-transform group-hover:scale-[1.02]">
+                  <div className="aspect-[2/3] w-full">
+                    <img
+                      src={poster}
+                      alt={movie.title || "Movie"}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-white line-clamp-2">
+                  {movie.title || "Untitled"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
-
