@@ -162,10 +162,12 @@ export default function SeatSelection() {
         showtimeId: Number(showtimeId),
         seatIds: selectedSeatIds,
       });
-      setNotice("Reservation confirmed.");
-      await loadSeatMap();
+      navigate("/my-reservations");
     } catch (err) {
       setError(err?.message || "Failed to confirm reservation.");
+      if (err?.status === 409) {
+        await loadSeatMap();
+      }
     } finally {
       setSaving(false);
     }
