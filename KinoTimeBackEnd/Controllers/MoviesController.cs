@@ -1,12 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
 using KinoTimeBackEnd.Data;
 using KinoTimeBackEnd.Models;
 
 namespace KinoTimeBackEnd.Controllers
 {
-    [Authorize] // Çdo endpoint kërkon autentikim
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MoviesController : ControllerBase
@@ -18,26 +18,22 @@ namespace KinoTimeBackEnd.Controllers
             _context = context;
         }
 
-        // ===================== GET ALL =====================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
             return await _context.Movies.ToListAsync();
         }
 
-        // ===================== GET BY ID =====================
         [HttpGet("{id}")]
         public async Task<ActionResult<Movie>> GetMovie(int id)
         {
             var movie = await _context.Movies.FindAsync(id);
-
             if (movie == null)
                 return NotFound();
 
             return movie;
         }
 
-        // ===================== CREATE (Admin only) =====================
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
@@ -51,13 +47,12 @@ namespace KinoTimeBackEnd.Controllers
             return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
         }
 
-        // ===================== UPDATE (Admin only) =====================
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMovie(int id, Movie movie)
         {
             if (id != movie.Id)
-                return BadRequest("ID nuk përputhet.");
+                return BadRequest("ID nuk perputhet.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -71,18 +66,18 @@ namespace KinoTimeBackEnd.Controllers
             existingMovie.Description = movie.Description;
             existingMovie.ReleaseYear = movie.ReleaseYear;
             existingMovie.Duration = movie.Duration;
+            existingMovie.PosterUrl = movie.PosterUrl;
+            existingMovie.ReleaseDate = movie.ReleaseDate;
 
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // ===================== DELETE (Admin only) =====================
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMovie(int id)
         {
             var movie = await _context.Movies.FindAsync(id);
-
             if (movie == null)
                 return NotFound();
 
@@ -93,4 +88,3 @@ namespace KinoTimeBackEnd.Controllers
         }
     }
 }
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut } from "../../services/api";
 
 export default function AdminShowtimes() {
@@ -41,6 +41,23 @@ export default function AdminShowtimes() {
     movieTitle: showtime?.movie?.title ?? showtime?.Movie?.Title ?? "",
     hallName: showtime?.hall?.name ?? showtime?.Hall?.Name ?? "",
   });
+
+  const normalizeMovie = (movie) => ({
+    id: movie?.id ?? movie?.Id ?? 0,
+    title: movie?.title ?? movie?.Title ?? "Untitled",
+    releaseDate: movie?.releaseDate ?? movie?.ReleaseDate ?? null,
+  });
+
+  const normalizedMovies = useMemo(() => {
+    return Array.isArray(movies) ? movies.map((movie) => normalizeMovie(movie)) : [];
+  }, [movies]);
+
+  const isComingSoonMovie = (movie) => {
+    if (!movie?.releaseDate) return false;
+    const date = new Date(movie.releaseDate);
+    if (Number.isNaN(date.getTime())) return false;
+    return date.getTime() > Date.now();
+  };
 
   const toNumber = (value) => {
     if (value === "" || value === null || value === undefined) return 0;
@@ -143,6 +160,10 @@ export default function AdminShowtimes() {
     setError("");
   };
 
+  const findMovieById = (movieId) => {
+    return normalizedMovies.find((movie) => Number(movie.id) === Number(movieId)) ?? null;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -157,6 +178,17 @@ export default function AdminShowtimes() {
 
     if (!payload.movieId || !payload.hallId) {
       setError("Movie and hall are required.");
+      return;
+    }
+
+    const selectedMovie = findMovieById(payload.movieId);
+    if (!selectedMovie) {
+      setError("Selected movie not found.");
+      return;
+    }
+
+    if (isComingSoonMovie(selectedMovie)) {
+      setError("You cannot add showtimes for Coming Soon movies.");
       return;
     }
 
@@ -222,19 +254,19 @@ export default function AdminShowtimes() {
   };
 
   const renderMovieOptions = () => {
-    if (movies.length === 0) {
+    if (normalizedMovies.length === 0) {
       return (
         <option value="" disabled>
           No movies available
         </option>
       );
     }
-    return movies.map((movie) => {
-      const id = movie?.id ?? movie?.Id;
-      const title = movie?.title ?? movie?.Title ?? "Untitled";
+
+    return normalizedMovies.map((movie) => {
+      const comingSoon = isComingSoonMovie(movie);
       return (
-        <option key={id ?? title} value={id ?? ""}>
-          {title}
+        <option key={movie.id} value={movie.id} disabled={comingSoon}>
+          {comingSoon ? `${movie.title} (Coming Soon)` : movie.title}
         </option>
       );
     });
@@ -273,11 +305,13 @@ export default function AdminShowtimes() {
             Add Showtime
           </button>
         </div>
+
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
+
         {isFormOpen && (
           <form
             onSubmit={handleSubmit}
@@ -298,7 +332,11 @@ export default function AdminShowtimes() {
                   <option value="">Select movie</option>
                   {renderMovieOptions()}
                 </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Movies marked as Coming Soon cannot be selected for showtimes.
+                </p>
               </div>
+
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Hall
@@ -314,6 +352,7 @@ export default function AdminShowtimes() {
                   {renderHallOptions()}
                 </select>
               </div>
+
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Start Time
@@ -327,6 +366,7 @@ export default function AdminShowtimes() {
                   required
                 />
               </div>
+
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
                   End Time
@@ -340,6 +380,7 @@ export default function AdminShowtimes() {
                   required
                 />
               </div>
+
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
                   Price
@@ -356,6 +397,7 @@ export default function AdminShowtimes() {
                 />
               </div>
             </div>
+
             <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
               <button
                 type="button"
@@ -374,6 +416,7 @@ export default function AdminShowtimes() {
             </div>
           </form>
         )}
+
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-900 dark:border-white/[0.05]">

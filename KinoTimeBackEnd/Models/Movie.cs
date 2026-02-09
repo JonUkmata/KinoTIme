@@ -23,6 +23,7 @@ namespace KinoTimeBackEnd.Models
 
         // Duration in minutes
         public int Duration { get; set; }
+        public DateTime? ReleaseDate { get; set; }
 
         [JsonIgnore]
         public ICollection<Showtime> Showtimes { get; set; } = new List<Showtime>();

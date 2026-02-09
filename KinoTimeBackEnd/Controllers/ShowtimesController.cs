@@ -1,7 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using System.ComponentModel.DataAnnotations;
 using KinoTimeBackEnd.Data;
 using KinoTimeBackEnd.Models;
 
@@ -18,8 +18,6 @@ namespace KinoTimeBackEnd.Controllers
             _context = context;
         }
 
-        // ===================== HELPER =====================
-        // Kontrollon nëse ka mbivendosje të shfaqjeve në të njëjtën sallë
         private async Task<bool> IsOverlappingAsync(Showtime showtime)
         {
             return await _context.Showtimes.AnyAsync(s =>
@@ -29,7 +27,11 @@ namespace KinoTimeBackEnd.Controllers
                 showtime.StartTime < s.EndTime);
         }
 
-        // ===================== GET ALL (PUBLIC) =====================
+        private static bool IsMovieComingSoon(Movie movie)
+        {
+            return movie.ReleaseDate.HasValue && movie.ReleaseDate.Value > DateTime.Now;
+        }
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Showtime>>> GetShowtimes()
         {
@@ -39,7 +41,6 @@ namespace KinoTimeBackEnd.Controllers
                 .ToListAsync();
         }
 
-        // ===================== GET BY ID (PUBLIC) =====================
         [HttpGet("{id}")]
         public async Task<ActionResult<Showtime>> GetShowtime(int id)
         {
@@ -54,7 +55,6 @@ namespace KinoTimeBackEnd.Controllers
             return showtime;
         }
 
-        // ===================== CREATE (ADMIN ONLY) =====================
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<Showtime>> CreateShowtime(ShowtimeCreateDto dto)
@@ -74,6 +74,9 @@ namespace KinoTimeBackEnd.Controllers
             var movie = await _context.Movies.FindAsync(dto.MovieId);
             if (movie == null)
                 return BadRequest("Filmi nuk ekziston.");
+
+            if (IsMovieComingSoon(movie))
+                return BadRequest("Nuk mund te shtoni shfaqje per film coming soon.");
 
             var hall = await _context.Halls.FindAsync(dto.HallId);
             if (hall == null)
@@ -99,7 +102,6 @@ namespace KinoTimeBackEnd.Controllers
             return CreatedAtAction(nameof(GetShowtime), new { id = showtime.Id }, showtime);
         }
 
-        // ===================== UPDATE (ADMIN ONLY) =====================
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateShowtime(int id, ShowtimeUpdateDto dto)
@@ -126,6 +128,9 @@ namespace KinoTimeBackEnd.Controllers
             var movie = await _context.Movies.FindAsync(dto.MovieId);
             if (movie == null)
                 return BadRequest("Filmi nuk ekziston.");
+
+            if (IsMovieComingSoon(movie))
+                return BadRequest("Nuk mund te shtoni shfaqje per film coming soon.");
 
             var hall = await _context.Halls.FindAsync(dto.HallId);
             if (hall == null)
@@ -157,7 +162,6 @@ namespace KinoTimeBackEnd.Controllers
             return NoContent();
         }
 
-        // ===================== DELETE (ADMIN ONLY) =====================
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteShowtime(int id)
@@ -214,4 +218,3 @@ namespace KinoTimeBackEnd.Controllers
         public decimal Price { get; set; }
     }
 }
-
