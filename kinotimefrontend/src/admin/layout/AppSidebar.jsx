@@ -32,6 +32,8 @@ const navItems = [
     name: "Showtimes",
     path: "/admin/showtimes",
   },
+  { icon: <ListIcon />, name: "Model1t", path: "/admin/model1t" },
+{ icon: <TableIcon />, name: "Model2t", path: "/admin/model2t" },
 ];
 
 const othersItems = [];
