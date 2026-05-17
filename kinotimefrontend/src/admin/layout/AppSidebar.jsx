@@ -32,6 +32,16 @@ const navItems = [
     name: "Showtimes",
     path: "/admin/showtimes",
   },
+   {
+    icon: <TableIcon />,
+    name: "Shkollat",
+    path: "/admin/shkollat",
+  },
+   {
+    icon: <TableIcon />,
+    name: "Nxenesit",
+    path: "/admin/nxenesit",
+  },
 ];
 
 const othersItems = [];

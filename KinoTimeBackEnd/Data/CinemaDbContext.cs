@@ -23,6 +23,10 @@ namespace KinoTimeBackEnd.Data
         public DbSet<User> Users { get; set; }
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Shkolla> Shkollat { get; set; }
+        public DbSet<Nxenesi> Nxenesit { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

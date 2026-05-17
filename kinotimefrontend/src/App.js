@@ -8,6 +8,10 @@ const AdminMovies = lazy(() => import('./admin/pages/AdminMovies.jsx'));
 const AdminHalls = lazy(() => import('./admin/pages/AdminHalls.jsx'));
 const AdminShowtimes = lazy(() => import('./admin/pages/AdminShowtimes.jsx'));
 const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard.jsx'));
+
+const AdminShkollat = lazy(() => import('./admin/pages/AdminShkollat.jsx'));
+const AdminNxenesit = lazy(() => import('./admin/pages/AdminNxenesit.jsx'));
+
 const AppLayout = lazy(() => import('./admin/layout/AppLayout.jsx'));
 const Login = lazy(() => import('./auth/Login'));
 const Register = lazy(() => import('./auth/Register'));
@@ -68,6 +72,8 @@ function App() {
                 <Route path="movies" element={<AdminMovies />} />
                 <Route path="halls" element={<AdminHalls />} />
                 <Route path="showtimes" element={<AdminShowtimes />} />
+                <Route path="shkollat" element={<AdminShkollat />} />
+                <Route path="nxenesit" element={<AdminNxenesit />} />
               </Route>
             </Route>
           </Route>
